@@ -306,13 +306,28 @@ extension VideoPlayer {
         }
     }
 
-    private func handleLongPress(point: UnitPoint) {
+    private func handleLongPress(state: UIGestureRecognizer.State, point: UnitPoint) {
         switch longPressGesture {
         case .none:
             return
         case .gestureLock:
+            guard state == .began else { return }
             guard !isPresentingOverlay else { return }
             isGestureLocked.toggle()
+        case .playbackSpeed:
+            var clampedPlaybackSpeed: Float = 0.0
+            if state == .began {
+                clampedPlaybackSpeed = 1.5
+            } else if state == .cancelled || state == .ended {
+                clampedPlaybackSpeed = 1.0
+            }
+            
+            if clampedPlaybackSpeed > 0 {
+                updateViewProxy.present(systemName: "speedometer", title: clampedPlaybackSpeed.rateLabel)
+                
+                playbackSpeed = clampedPlaybackSpeed
+                videoPlayerManager.proxy.setRate(.absolute(clampedPlaybackSpeed))
+            }
         }
     }
 

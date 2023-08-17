@@ -21,12 +21,15 @@ typealias PinchGestureHandler = (UIGestureRecognizer.State, UnitPoint, CGFloat) 
 typealias SwipeGestureHandler = (UnitPoint, Bool, Int) -> Void
 // point, amount
 typealias TapGestureHandler = (UnitPoint, Int) -> Void
+// state, point
+typealias LongPressGestureHandler = (UIGestureRecognizer.State, UnitPoint) -> Void
+
 
 struct GestureView: UIViewRepresentable {
 
     private var onHorizontalPan: PanGestureHandler?
     private var onHorizontalSwipe: SwipeGestureHandler?
-    private var onLongPress: ((UnitPoint) -> Void)?
+    private var onLongPress: LongPressGestureHandler?
     private var onPinch: PinchGestureHandler?
     private var onTap: TapGestureHandler?
     private var onDoubleTouch: TapGestureHandler?
@@ -107,7 +110,7 @@ extension GestureView {
         copy(modifying: \.onDoubleTouch, with: action)
     }
 
-    func onLongPress(minimumDuration: TimeInterval, _ action: @escaping (UnitPoint) -> Void) -> Self {
+    func onLongPress(minimumDuration: TimeInterval, _ action: @escaping LongPressGestureHandler) -> Self {
         copy(modifying: \.longPressMinimumDuration, with: minimumDuration)
             .copy(modifying: \.onLongPress, with: action)
     }
@@ -121,7 +124,7 @@ class UIGestureView: UIView {
 
     private let onHorizontalPan: PanGestureHandler?
     private let onHorizontalSwipe: SwipeGestureHandler?
-    private let onLongPress: ((UnitPoint) -> Void)?
+    private let onLongPress: LongPressGestureHandler?
     private let onPinch: PinchGestureHandler?
     private let onTap: TapGestureHandler?
     private let onDoubleTouch: TapGestureHandler?
@@ -145,7 +148,7 @@ class UIGestureView: UIView {
     init(
         onHorizontalPan: PanGestureHandler?,
         onHorizontalSwipe: SwipeGestureHandler?,
-        onLongPress: ((UnitPoint) -> Void)?,
+        onLongPress: LongPressGestureHandler?,
         onPinch: PinchGestureHandler?,
         onTap: TapGestureHandler?,
         onDoubleTouch: TapGestureHandler?,
@@ -265,10 +268,10 @@ class UIGestureView: UIView {
 
     @objc
     private func didPerformLongPress(_ gestureRecognizer: UILongPressGestureRecognizer) {
-        guard let onLongPress, gestureRecognizer.state == .began else { return }
+        guard let onLongPress else { return }
         let unitPoint = gestureRecognizer.unitPoint(in: self)
 
-        onLongPress(unitPoint)
+        onLongPress(gestureRecognizer.state, unitPoint)
     }
 
     @objc
