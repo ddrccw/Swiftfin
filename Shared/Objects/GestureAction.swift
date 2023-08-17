@@ -33,6 +33,7 @@ enum MultiTapAction: String, GestureAction {
 
     case none
     case jump
+    case pausePlay
 
     var displayTitle: String {
         switch self {
@@ -40,6 +41,8 @@ enum MultiTapAction: String, GestureAction {
             return L10n.none
         case .jump:
             return "Jump"
+        case .pausePlay:
+            return "Pause/Play"
         }
     }
 }

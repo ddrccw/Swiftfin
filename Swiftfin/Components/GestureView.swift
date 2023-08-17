@@ -174,8 +174,18 @@ class UIGestureView: UIView {
 
         let pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(didPerformPinch))
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(didPerformTap))
-        let doubleTouchGesture = UITapGestureRecognizer(target: self, action: #selector(didPerformTap))
+        tapGesture.numberOfTapsRequired = 1
+        tapGesture.numberOfTouchesRequired = 1
+        let doubleTapGesture = UITapGestureRecognizer(target: self, action: #selector(didPerformTap))
+        doubleTapGesture.numberOfTapsRequired = 2;
+        doubleTapGesture.numberOfTouchesRequired = 1
+        let doubleTouchGesture = UITapGestureRecognizer(target: self, action: #selector(didPerformDoubleTouch))
+        doubleTouchGesture.numberOfTapsRequired = 1
         doubleTouchGesture.numberOfTouchesRequired = 2
+
+        tapGesture.require(toFail: doubleTapGesture)
+        doubleTouchGesture.require(toFail: doubleTapGesture)
+        
         let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(didPerformLongPress))
         longPressGesture.minimumPressDuration = longPressMinimumDuration
         let verticalPanGesture = PanDirectionGestureRecognizer(
@@ -191,6 +201,7 @@ class UIGestureView: UIView {
 
         addGestureRecognizer(pinchGesture)
         addGestureRecognizer(tapGesture)
+        addGestureRecognizer(doubleTapGesture)
         addGestureRecognizer(doubleTouchGesture)
         addGestureRecognizer(longPressGesture)
         addGestureRecognizer(verticalPanGesture)
@@ -271,16 +282,18 @@ class UIGestureView: UIView {
     @objc
     private func didPerformTap(_ gestureRecognizer: UITapGestureRecognizer) {
         guard let onTap else { return }
-        let location = gestureRecognizer.location(in: self)
         let unitPoint = gestureRecognizer.unitPoint(in: self)
-
-        if let lastTouchLocation, lastTouchLocation.isNear(lastTouchLocation, padding: samePointPadding) {
-            multiTapOccurred(at: location)
-            onTap(unitPoint, multiTapAmount)
-        } else {
-            multiTapOccurred(at: location)
-            onTap(unitPoint, 1)
-        }
+        onTap(unitPoint, gestureRecognizer.numberOfTapsRequired)
+//        let location = gestureRecognizer.location(in: self)
+//        let unitPoint = gestureRecognizer.unitPoint(in: self)
+//
+//        if let lastTouchLocation, lastTouchLocation.isNear(lastTouchLocation, padding: samePointPadding) {
+//            multiTapOccurred(at: location)
+//            onTap(unitPoint, multiTapAmount)
+//        } else {
+//            multiTapOccurred(at: location)
+//            onTap(unitPoint, 1)
+//        }
     }
 
     @objc

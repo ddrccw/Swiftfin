@@ -344,6 +344,15 @@ extension VideoPlayer {
                 return
             case .jump:
                 jumpAction(unitPoint: unitPoint, amount: taps - 1)
+            case .pausePlay:
+                if videoPlayerManager.state == .playing {
+                    videoPlayerManager.proxy.pause()
+                    updateViewProxy.present(systemName: "pause.fill", title: "Pause")
+                } else {
+                    videoPlayerManager.proxy.play()
+                    updateViewProxy.present(systemName: "play.fill", title: "Play")
+                }
+                return
             }
         } else {
             withAnimation(.linear(duration: 0.1)) {
