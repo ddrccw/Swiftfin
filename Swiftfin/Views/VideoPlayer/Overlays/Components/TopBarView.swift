@@ -37,6 +37,8 @@ extension VideoPlayer.Overlay {
                             .padding()
                     }
                     .buttonStyle(ScalingButtonStyle(scale: 0.8))
+                    .frame(width: 45, height: 45)
+                    .contentShape(Rectangle())
 
                     Text(viewModel.item.displayTitle)
                         .font(.title3)
