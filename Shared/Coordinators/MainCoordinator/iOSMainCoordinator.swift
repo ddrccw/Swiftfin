@@ -15,6 +15,7 @@ import Nuke
 import Stinsen
 import SwiftUI
 import WidgetKit
+import CoreStore
 
 final class MainCoordinator: NavigationCoordinatable {
 
@@ -81,8 +82,26 @@ final class MainCoordinator: NavigationCoordinatable {
 
     @objc
     func didChangeServerCurrentURI(_ notification: Notification) {
-//        guard let newCurrentServerState = notification.object as? SwiftfinStore.State.Server
-//        else { fatalError("Need to have new current login state server") }
+        guard let newCurrentServerState = notification.object as? SwiftfinStore.State.Server
+        else { fatalError("Need to have new current login state server") }
+
+        try! SwiftfinStore.dataStack.perform { transaction in
+            let existingServer = try! SwiftfinStore.dataStack.fetchOne(
+                From<SwiftfinStore.Models.StoredServer>(),
+                [Where<SwiftfinStore.Models.StoredServer>(
+                    "id == %@",
+                    newCurrentServerState.id
+                )]
+            )
+
+            let editServer = transaction.edit(existingServer)!
+            editServer.currentURL = newCurrentServerState.currentURL
+        }
+
+        Notifications[.didSignOut].post()
+        Container.userSession.reset()
+        Notifications[.didSignIn].post()
+
 //        guard SessionManager.main.currentLogin != nil else { return }
 //        if newCurrentServerState.id == SessionManager.main.currentLogin.server.id {
 //            SessionManager.main.signInUser(server: newCurrentServerState, user: SessionManager.main.currentLogin.user)

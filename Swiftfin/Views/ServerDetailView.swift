@@ -38,7 +38,7 @@ struct ServerDetailView: View {
                             .foregroundColor(.secondary)
                     }
                     .onChange(of: currentServerURI) { _ in
-                        // TODO: change server url
+                        viewModel.setServerCurrentURI(uri: currentServerURI)
                     }
                 }
 

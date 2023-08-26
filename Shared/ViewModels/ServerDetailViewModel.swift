@@ -19,7 +19,16 @@ class ServerDetailViewModel: ViewModel {
     }
 
     func setServerCurrentURI(uri: String) {
-
+        guard let currentURL = URL.init(string: uri) else { return }
+        let newServerState = ServerState(urls: self.server.urls,
+                                         currentURL: currentURL,
+                                         name: self.server.name,
+                                         id: self.server.id,
+                                         os: self.server.os,
+                                         version: self.server.version,
+                                         usersIDs: self.server.userIDs)
+        self.server = newServerState
+        Notifications[.didChangeServerCurrentURI].post(object: newServerState)
 //        SessionManager.main.setServerCurrentURI(server: server, uri: uri)
 //            .sink { c in
 //                print(c)
