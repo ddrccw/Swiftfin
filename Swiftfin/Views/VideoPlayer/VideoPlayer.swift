@@ -519,10 +519,19 @@ extension VideoPlayer {
     ) {
         if state == .began {
             isScrubbing = true
-
             gestureStateHandler.beginningPanProgress = currentProgressHandler.progress
             gestureStateHandler.beginningHorizontalPanUnit = point
             gestureStateHandler.beganPanWithOverlay = isPresentingOverlay
+            
+            var title = currentProgressHandler.scrubbedSeconds.timeLabel
+            title += " / "
+            title += videoPlayerManager.currentViewModel.item.runTimeSeconds.timeLabel
+            updateViewProxy.present(systemName: nil, title: title)
+        } else if state == .changed {
+            var title = currentProgressHandler.scrubbedSeconds.timeLabel
+            title += " / "
+            title += videoPlayerManager.currentViewModel.item.runTimeSeconds.timeLabel
+            updateViewProxy.present(systemName: nil, title: title)
         } else if state == .ended {
             if !gestureStateHandler.beganPanWithOverlay {
                 isPresentingOverlay = false

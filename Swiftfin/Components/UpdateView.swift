@@ -22,7 +22,7 @@ class UpdateViewProxy: ObservableObject {
     @Published
     private(set) var pushed: Bool = false
 
-    func present(systemName: String, title: String, iconSize: CGSize = .init(width: 25, height: 25)) {
+    func present(systemName: String?, title: String, iconSize: CGSize = .init(width: 25, height: 25)) {
         self.systemName = systemName
         self.iconSize = iconSize
         self.title = title
