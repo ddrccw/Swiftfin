@@ -98,6 +98,8 @@ struct VideoPlayer: View {
     private var playbackSpeed: Float = 1
     @State
     private var subtitleOffset: Int = 0
+    @State
+    private var subtitleSizeIsInited = false
 
     private let gestureStateHandler: GestureStateHandler = .init()
     private let updateViewProxy: UpdateViewProxy = .init()
@@ -132,6 +134,15 @@ struct VideoPlayer: View {
                                 } else {
                                     router.dismissCoordinator {
                                         AppDelegate.changeOrientation(.portrait)
+                                    }
+                                }
+                            } else if state == .playing {
+                                if !subtitleSizeIsInited {
+                                    self.subtitleSizeIsInited = true
+                                    // delay task
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                        let size = Defaults[.VideoPlayer.Subtitle.subtitleSize]
+                                        videoPlayerManager.proxy.setSubtitleSize(.absolute(24 - size))
                                     }
                                 }
                             }
