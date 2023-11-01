@@ -57,7 +57,7 @@ struct PlaybackSettingsView: View {
             BasicStepper(
                 title: "Subtitle Offset",
                 value: _subtitleOffset.wrappedValue,
-                range: -30000 ... 30000,
+                range: -1800000 ... 1800000,
                 step: 100
             )
             .valueFormatter {
