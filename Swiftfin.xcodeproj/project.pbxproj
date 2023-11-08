@@ -147,6 +147,8 @@
 		6334175B287DDFB9000603CE /* QuickConnectSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6334175A287DDFB9000603CE /* QuickConnectSettingsView.swift */; };
 		6334175D287DE0D0000603CE /* QuickConnectSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6334175C287DE0D0000603CE /* QuickConnectSettingsViewModel.swift */; };
 		AE8C3159265D6F90008AA076 /* bitrates.json in Resources */ = {isa = PBXBuildFile; fileRef = AE8C3158265D6F90008AA076 /* bitrates.json */; };
+		C305E5542AFB5E3F00AFA08D /* MS-Yahei.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C305E5532AFB5E3E00AFA08D /* MS-Yahei.ttf */; };
+		C305E5552AFB5E3F00AFA08D /* MS-Yahei.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C305E5532AFB5E3E00AFA08D /* MS-Yahei.ttf */; };
 		C400DB6A27FE894F007B65FE /* LiveTVChannelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C400DB6927FE894F007B65FE /* LiveTVChannelsView.swift */; };
 		C400DB6B27FE8C97007B65FE /* LiveTVChannelItemElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4E52304272CE68800654268 /* LiveTVChannelItemElement.swift */; };
 		C400DB6D27FE8E65007B65FE /* LiveTVChannelItemWideElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = C400DB6C27FE8E65007B65FE /* LiveTVChannelItemWideElement.swift */; };
@@ -893,6 +895,7 @@
 		6334175C287DE0D0000603CE /* QuickConnectSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickConnectSettingsViewModel.swift; sourceTree = "<group>"; };
 		637FCAF3287B5B2600C0A353 /* UDPBroadcast.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = UDPBroadcast.xcframework; path = Carthage/Build/UDPBroadcast.xcframework; sourceTree = "<group>"; };
 		AE8C3158265D6F90008AA076 /* bitrates.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = bitrates.json; sourceTree = "<group>"; };
+		C305E5532AFB5E3E00AFA08D /* MS-Yahei.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "MS-Yahei.ttf"; sourceTree = "<group>"; };
 		C400DB6927FE894F007B65FE /* LiveTVChannelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTVChannelsView.swift; sourceTree = "<group>"; };
 		C400DB6C27FE8E65007B65FE /* LiveTVChannelItemWideElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTVChannelItemWideElement.swift; sourceTree = "<group>"; };
 		C40CD924271F8D1E000FB198 /* ItemTypeLibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemTypeLibraryViewModel.swift; sourceTree = "<group>"; };
@@ -1903,6 +1906,7 @@
 			isa = PBXGroup;
 			children = (
 				AE8C3158265D6F90008AA076 /* bitrates.json */,
+				C305E5532AFB5E3E00AFA08D /* MS-Yahei.ttf */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -2936,6 +2940,7 @@
 				53913BF626D323FE00EB3286 /* Localizable.strings in Resources */,
 				53913C0526D323FE00EB3286 /* Localizable.strings in Resources */,
 				53913BFF26D323FE00EB3286 /* Localizable.strings in Resources */,
+				C305E5552AFB5E3F00AFA08D /* MS-Yahei.ttf in Resources */,
 				53913C0E26D323FE00EB3286 /* Localizable.strings in Resources */,
 				53913BF026D323FE00EB3286 /* Localizable.strings in Resources */,
 				53913C0826D323FE00EB3286 /* Localizable.strings in Resources */,
@@ -2961,6 +2966,7 @@
 				53913BF526D323FE00EB3286 /* Localizable.strings in Resources */,
 				53913C0426D323FE00EB3286 /* Localizable.strings in Resources */,
 				53913BFE26D323FE00EB3286 /* Localizable.strings in Resources */,
+				C305E5542AFB5E3F00AFA08D /* MS-Yahei.ttf in Resources */,
 				53913C0D26D323FE00EB3286 /* Localizable.strings in Resources */,
 				53913BEF26D323FE00EB3286 /* Localizable.strings in Resources */,
 				53913C0726D323FE00EB3286 /* Localizable.strings in Resources */,
