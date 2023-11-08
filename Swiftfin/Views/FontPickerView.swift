@@ -17,16 +17,22 @@ struct FontPickerView: View {
 
     @State
     private var updateSelection: String
+    
+    private let fonts: [String]
 
     init(selection: Binding<String>) {
         self._selection = selection
         self.updateSelection = selection.wrappedValue
+        let customFont = "Microsoft YaHei"
+        var fonts = UIFont.familyNames.filter { $0 != customFont }
+        fonts.insert(customFont, at: 0)
+        self.fonts = fonts
     }
 
     var body: some View {
         SelectorView(
             selection: $updateSelection,
-            allItems: UIFont.familyNames
+            allItems: self.fonts
         )
         .label { fontFamily in
             Text(fontFamily)
