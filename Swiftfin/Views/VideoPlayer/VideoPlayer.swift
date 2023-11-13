@@ -140,7 +140,10 @@ struct VideoPlayer: View {
                                 if !subtitleSizeIsInited {
                                     self.subtitleSizeIsInited = true
                                     // delay task
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                        let fontName = Defaults[.VideoPlayer.Subtitle.subtitleFontName]
+                                        videoPlayerManager.proxy.setSubtitleFont(fontName)
+                                        
                                         let size = Defaults[.VideoPlayer.Subtitle.subtitleSize]
                                         videoPlayerManager.proxy.setSubtitleSize(.absolute(24 - size))
                                     }
