@@ -352,21 +352,19 @@ extension VideoPlayer {
             guard !isPresentingOverlay else { return }
             isGestureLocked.toggle()
         case .playbackSpeed:
-            let i = 0
-            // TODO(xiaomin.cc): implement
-//            var clampedPlaybackSpeed: Float = 0.0
-//            if state == .began {
-//                clampedPlaybackSpeed = 1.5
-//            } else if state == .cancelled || state == .ended {
-//                clampedPlaybackSpeed = 1.0
-//            }
-//
-//            if clampedPlaybackSpeed > 0 {
-//                updateViewProxy.present(systemName: "speedometer", title: clampedPlaybackSpeed.rateLabel)
-//
-//                playbackSpeed = clampedPlaybackSpeed
-//                videoPlayerManager.proxy.setRate(.absolute(clampedPlaybackSpeed))
-//            }
+            var clampedPlaybackSpeed: Double = 0.0
+            if state == .began {
+                clampedPlaybackSpeed = 1.5
+            } else if state == .cancelled || state == .ended {
+                clampedPlaybackSpeed = 1.0
+            }
+
+            if clampedPlaybackSpeed > 0 {
+                updateViewProxy.present(systemName: "speedometer", title: clampedPlaybackSpeed.rateLabel)
+
+                playbackSpeed = clampedPlaybackSpeed
+                videoPlayerManager.proxy.setRate(.absolute(Float(clampedPlaybackSpeed)))
+            }
         }
     }
 
