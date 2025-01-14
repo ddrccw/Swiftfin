@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Defaults
@@ -20,11 +20,11 @@ struct MediaSourceInfoView: View {
     var body: some View {
         Form {
             if let videoStreams = source.videoStreams,
-               !videoStreams.isEmpty
+               videoStreams.isNotEmpty
             {
                 Section(L10n.video) {
                     ForEach(videoStreams, id: \.self) { stream in
-                        ChevronButton(title: stream.displayTitle ?? .emptyDash)
+                        ChevronButton(stream.displayTitle ?? .emptyDash)
                             .onSelect {
                                 router.route(to: \.mediaStreamInfo, stream)
                             }
@@ -33,11 +33,11 @@ struct MediaSourceInfoView: View {
             }
 
             if let audioStreams = source.audioStreams,
-               !audioStreams.isEmpty
+               audioStreams.isNotEmpty
             {
                 Section(L10n.audio) {
                     ForEach(audioStreams, id: \.self) { stream in
-                        ChevronButton(title: stream.displayTitle ?? .emptyDash)
+                        ChevronButton(stream.displayTitle ?? .emptyDash)
                             .onSelect {
                                 router.route(to: \.mediaStreamInfo, stream)
                             }
@@ -46,11 +46,11 @@ struct MediaSourceInfoView: View {
             }
 
             if let subtitleStreams = source.subtitleStreams,
-               !subtitleStreams.isEmpty
+               subtitleStreams.isNotEmpty
             {
                 Section(L10n.subtitle) {
                     ForEach(subtitleStreams, id: \.self) { stream in
-                        ChevronButton(title: stream.displayTitle ?? .emptyDash)
+                        ChevronButton(stream.displayTitle ?? .emptyDash)
                             .onSelect {
                                 router.route(to: \.mediaStreamInfo, stream)
                             }
@@ -60,7 +60,7 @@ struct MediaSourceInfoView: View {
         }
         .navigationTitle(source.displayTitle)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationCloseButton {
+        .navigationBarCloseButton {
             router.dismissCoordinator()
         }
     }

@@ -3,14 +3,12 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Combine
 import JellyfinAPI
 import SwiftUI
-
-// TODO: better name
 
 struct CinematicBackgroundView<Item: Poster>: View {
 
@@ -24,15 +22,16 @@ struct CinematicBackgroundView<Item: Poster>: View {
 
     var body: some View {
         RotateContentView(proxy: proxy)
-            .onChange(of: viewModel.currentItem) { newItem in
+            .onChange(of: viewModel.currentItem) { _, newItem in
                 proxy.update {
-                    ImageView(newItem?.landscapePosterImageSources(maxWidth: UIScreen.main.bounds.width, single: false) ?? [])
-                        .placeholder {
+                    ImageView(newItem?.cinematicImageSources(maxWidth: nil) ?? [])
+                        .placeholder { _ in
                             Color.clear
                         }
                         .failure {
                             Color.clear
                         }
+                        .aspectRatio(contentMode: .fill)
                 }
             }
     }
@@ -48,6 +47,7 @@ struct CinematicBackgroundView<Item: Poster>: View {
         init() {
             currentItemSubject
                 .debounce(for: 0.5, scheduler: DispatchQueue.main)
+                .removeDuplicates()
                 .sink { newItem in
                     self.currentItem = newItem
                 }
@@ -55,7 +55,6 @@ struct CinematicBackgroundView<Item: Poster>: View {
         }
 
         func select(item: Item) {
-            guard currentItem != item else { return }
             currentItemSubject.send(item)
         }
     }

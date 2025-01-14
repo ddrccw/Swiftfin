@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Combine
@@ -14,56 +14,91 @@ import JellyfinAPI
 import Nuke
 import Stinsen
 import SwiftUI
-import WidgetKit
-import CoreStore
+
+// TODO: could possibly clean up
+//       - only go to loading if migrations necessary
+//       - account for other migrations (Defaults)
 
 final class MainCoordinator: NavigationCoordinatable {
 
-    @Injected(LogManager.service)
+    @Injected(\.logService)
     private var logger
 
     var stack: Stinsen.NavigationStack<MainCoordinator>
 
     @Root
+    var loading = makeLoading
+    @Root
     var mainTab = makeMainTab
     @Root
-    var serverList = makeServerList
+    var selectUser = makeSelectUser
+    @Root
+    var serverCheck = makeServerCheck
+
+    @Route(.fullScreen)
+    var liveVideoPlayer = makeLiveVideoPlayer
+    @Route(.modal)
+    var settings = makeSettings
     @Route(.fullScreen)
     var videoPlayer = makeVideoPlayer
 
-    private var cancellables = Set<AnyCancellable>()
-
     init() {
 
-        if Container.userSession.callAsFunction().authenticated {
-            stack = NavigationStack(initial: \MainCoordinator.mainTab)
-        } else {
-            stack = NavigationStack(initial: \MainCoordinator.serverList)
+        stack = NavigationStack(initial: \.loading)
+
+        Task {
+            do {
+                try await SwiftfinStore.setupDataStack()
+
+                if Container.shared.currentUserSession() != nil, !Defaults[.signOutOnClose] {
+                    await MainActor.run {
+                        withAnimation(.linear(duration: 0.1)) {
+                            let _ = root(\.serverCheck)
+                        }
+                    }
+                } else {
+                    await MainActor.run {
+                        withAnimation(.linear(duration: 0.1)) {
+                            let _ = root(\.selectUser)
+                        }
+                    }
+                }
+
+            } catch {
+                await MainActor.run {
+                    logger.critical("\(error.localizedDescription)")
+                    Notifications[.didFailMigration].post()
+                }
+            }
         }
 
-        ImageCache.shared.costLimit = 125 * 1024 * 1024 // 125MB memory
-        DataLoader.sharedUrlCache.diskCapacity = 1000 * 1024 * 1024 // 1000MB disk
-
-        WidgetCenter.shared.reloadAllTimelines()
-        UIScrollView.appearance().keyboardDismissMode = .onDrag
+        // TODO: move these to the App instead?
 
         // Notification setup for state
         Notifications[.didSignIn].subscribe(self, selector: #selector(didSignIn))
         Notifications[.didSignOut].subscribe(self, selector: #selector(didSignOut))
         Notifications[.processDeepLink].subscribe(self, selector: #selector(processDeepLink(_:)))
-        Notifications[.didChangeServerCurrentURI].subscribe(self, selector: #selector(didChangeServerCurrentURI(_:)))
+        Notifications[.didChangeCurrentServerURL].subscribe(self, selector: #selector(didChangeCurrentServerURL(_:)))
     }
+
+    private func didFinishMigration() {}
 
     @objc
     func didSignIn() {
-        logger.info("Received `didSignIn` from SwiftfinNotificationCenter.")
-        root(\.mainTab)
+        logger.info("Signed in")
+
+        withAnimation(.linear(duration: 0.1)) {
+            let _ = root(\.serverCheck)
+        }
     }
 
     @objc
     func didSignOut() {
-        logger.info("Received `didSignOut` from SwiftfinNotificationCenter.")
-        root(\.serverList)
+        logger.info("Signed out")
+
+        withAnimation(.linear(duration: 0.1)) {
+            let _ = root(\.selectUser)
+        }
     }
 
     @objc
@@ -80,43 +115,71 @@ final class MainCoordinator: NavigationCoordinatable {
         }
     }
 
+    ////        guard SessionManager.main.currentLogin != nil else { return }
+    ////        if newCurrentServerState.id == SessionManager.main.currentLogin.server.id {
+    ////            SessionManager.main.signInUser(server: newCurrentServerState, user: SessionManager.main.currentLogin.user)
+    ////        }
     @objc
-    func didChangeServerCurrentURI(_ notification: Notification) {
-        guard let newCurrentServerState = notification.object as? SwiftfinStore.State.Server
-        else { fatalError("Need to have new current login state server") }
-
-        try! SwiftfinStore.dataStack.perform { transaction in
-            let existingServer = try! SwiftfinStore.dataStack.fetchOne(
-                From<SwiftfinStore.Models.StoredServer>(),
-                [Where<SwiftfinStore.Models.StoredServer>(
-                    "id == %@",
-                    newCurrentServerState.id
-                )]
-            )
-
-            let editServer = transaction.edit(existingServer)!
-            editServer.currentURL = newCurrentServerState.currentURL
-        }
-
-        Notifications[.didSignOut].post()
-        Container.userSession.reset()
-        Notifications[.didSignIn].post()
-
-//        guard SessionManager.main.currentLogin != nil else { return }
-//        if newCurrentServerState.id == SessionManager.main.currentLogin.server.id {
-//            SessionManager.main.signInUser(server: newCurrentServerState, user: SessionManager.main.currentLogin.user)
+    // <<<<<<< HEAD
+//    func didChangeServerCurrentURI(_ notification: Notification) {
+//        guard let newCurrentServerState = notification.object as? SwiftfinStore.State.Server
+//        else { fatalError("Need to have new current login state server") }
+//
+//        try! SwiftfinStore.dataStack.perform { transaction in
+//            let existingServer = try! SwiftfinStore.dataStack.fetchOne(
+//                From<SwiftfinStore.Models.StoredServer>(),
+//                [Where<SwiftfinStore.Models.StoredServer>(
+//                    "id == %@",
+//                    newCurrentServerState.id
+//                )]
+//            )
+//
+//            let editServer = transaction.edit(existingServer)!
+//            editServer.currentURL = newCurrentServerState.currentURL
 //        }
+//
+//        Notifications[.didSignOut].post()
+//        Container.userSession.reset()
+//        Notifications[.didSignIn].post()
+//
+    //=======
+    func didChangeCurrentServerURL(_ notification: Notification) {
+
+        guard Container.shared.currentUserSession() != nil else { return }
+
+        Container.shared.currentUserSession.reset()
+        Notifications[.didSignIn].post()
+    }
+
+    func makeLoading() -> NavigationViewCoordinator<BasicNavigationViewCoordinator> {
+        NavigationViewCoordinator {
+            AppLoadingView()
+        }
+    }
+
+    func makeSettings() -> NavigationViewCoordinator<SettingsCoordinator> {
+        NavigationViewCoordinator(SettingsCoordinator())
     }
 
     func makeMainTab() -> MainTabCoordinator {
         MainTabCoordinator()
     }
 
-    func makeServerList() -> NavigationViewCoordinator<ServerListCoordinator> {
-        NavigationViewCoordinator(ServerListCoordinator())
+    func makeSelectUser() -> NavigationViewCoordinator<SelectUserCoordinator> {
+        NavigationViewCoordinator(SelectUserCoordinator())
+    }
+
+    func makeServerCheck() -> NavigationViewCoordinator<BasicNavigationViewCoordinator> {
+        NavigationViewCoordinator {
+            ServerCheckView()
+        }
     }
 
     func makeVideoPlayer(manager: VideoPlayerManager) -> VideoPlayerCoordinator {
         VideoPlayerCoordinator(manager: manager)
+    }
+
+    func makeLiveVideoPlayer(manager: LiveVideoPlayerManager) -> LiveVideoPlayerCoordinator {
+        LiveVideoPlayerCoordinator(manager: manager)
     }
 }

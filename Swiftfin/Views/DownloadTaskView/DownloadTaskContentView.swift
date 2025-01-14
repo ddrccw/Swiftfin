@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Defaults
@@ -18,7 +18,7 @@ extension DownloadTaskView {
         @Default(.accentColor)
         private var accentColor
 
-        @Injected(Container.downloadManager)
+        @Injected(\.downloadManager)
         private var downloadManager
 
         @EnvironmentObject
@@ -36,7 +36,7 @@ extension DownloadTaskView {
             VStack(alignment: .leading, spacing: 10) {
 
                 VStack(alignment: .center) {
-                    ImageView(downloadTask.item.landscapePosterImageSources(maxWidth: 600, single: true))
+                    ImageView(downloadTask.item.landscapeImageSources(maxWidth: 600))
                         .frame(maxHeight: 300)
                         .aspectRatio(1.77, contentMode: .fill)
                         .cornerRadius(10)
@@ -56,9 +56,9 @@ extension DownloadTaskView {
                             .frame(height: 50)
                     case let .downloading(progress):
                         HStack {
-                            CircularProgressView(progress: progress)
-                                .buttonStyle(.plain)
-                                .frame(width: 30, height: 30)
+//                            CircularProgressView(progress: progress)
+//                                .buttonStyle(.plain)
+//                                .frame(width: 30, height: 30)
 
                             Text("\(Int(progress * 100))%")
                                 .foregroundColor(.secondary)
@@ -75,7 +75,7 @@ extension DownloadTaskView {
                         .padding(.horizontal)
                     case let .error(error):
                         VStack {
-                            PrimaryButton(title: "Retry")
+                            PrimaryButton(title: L10n.retry)
                                 .onSelect {
                                     downloadManager.download(task: downloadTask)
                                 }
@@ -86,7 +86,7 @@ extension DownloadTaskView {
                                 .padding(.horizontal)
                         }
                     case .complete:
-                        PrimaryButton(title: "Play")
+                        PrimaryButton(title: L10n.play)
                             .onSelect {
                                 if Defaults[.VideoPlayer.videoPlayerType] == .swiftfin {
                                     router.dismissCoordinator {
@@ -113,7 +113,7 @@ extension DownloadTaskView {
                 Button {
                     isPresentingVideoPlayerTypeError = false
                 } label: {
-                    Text("Dismiss")
+                    Text(L10n.dismiss)
                 }
             } message: {
                 Text("Downloaded items are only playable through the Swiftfin video player.")
@@ -164,7 +164,7 @@ extension DownloadTaskView.ContentView {
                         Text(productionYear)
                     }
 
-                    if let runtime = downloadTask.item.getItemRuntime() {
+                    if let runtime = downloadTask.item.runTimeLabel {
                         Text(runtime)
                     }
                 }

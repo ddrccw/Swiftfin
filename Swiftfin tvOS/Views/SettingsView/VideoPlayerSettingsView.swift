@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Defaults
@@ -20,6 +20,11 @@ struct VideoPlayerSettingsView: View {
     private var jumpForwardLength
     @Default(.VideoPlayer.resumeOffset)
     private var resumeOffset
+
+    @Default(.VideoPlayer.Transition.pauseOnBackground)
+    private var pauseOnBackground
+    @Default(.VideoPlayer.Transition.playOnActive)
+    private var playOnActive
 
     @EnvironmentObject
     private var router: VideoPlayerSettingsCoordinator.Router
@@ -38,40 +43,51 @@ struct VideoPlayerSettingsView: View {
             .contentView {
 
                 Section {
+
                     ChevronButton(
-                        title: "Resume Offset",
-                        subtitle: resumeOffset.secondFormat
+                        L10n.offset,
+                        subtitle: resumeOffset.secondLabel
                     )
                     .onSelect {
                         isPresentingResumeOffsetStepper = true
                     }
+                } header: {
+                    L10n.resume.text
                 } footer: {
-                    Text("Resume content seconds before the recorded resume time")
+                    L10n.resumeOffsetDescription.text
                 }
 
                 Section {
-                    ChevronButton(title: L10n.subtitleFont, subtitle: subtitleFontName)
+
+                    ChevronButton(L10n.subtitleFont, subtitle: subtitleFontName)
                         .onSelect {
                             router.route(to: \.fontPicker, $subtitleFontName)
                         }
+                } header: {
+                    L10n.subtitles.text
                 } footer: {
-                    Text("Settings only affect some subtitle types")
+                    L10n.subtitlesDisclaimer.text
                 }
-            }
-            .navigationTitle("Video Player")
-            .blurFullScreenCover(isPresented: $isPresentingResumeOffsetStepper) {
-                StepperView(
-                    title: "Resume Offset",
-                    description: "Resume content seconds before the recorded resume time",
-                    value: $resumeOffset,
-                    range: 0 ... 30,
-                    step: 1
-                )
-                .valueFormatter {
-                    $0.secondFormat
+
+                Section(L10n.playback) {
+                    Toggle(L10n.pauseOnBackground, isOn: $pauseOnBackground)
+                    Toggle(L10n.playOnActive, isOn: $playOnActive)
                 }
-                .onCloseSelected {
-                    isPresentingResumeOffsetStepper = false
+                .navigationTitle(L10n.videoPlayer.text)
+                .blurFullScreenCover(isPresented: $isPresentingResumeOffsetStepper) {
+                    StepperView(
+                        title: L10n.resumeOffsetTitle,
+                        description: L10n.resumeOffsetDescription,
+                        value: $resumeOffset,
+                        range: 0 ... 30,
+                        step: 1
+                    )
+                    .valueFormatter {
+                        $0.secondLabel
+                    }
+                    .onCloseSelected {
+                        isPresentingResumeOffsetStepper = false
+                    }
                 }
             }
     }

@@ -3,14 +3,14 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import SwiftUI
 
 struct SeeAllPosterButton: View {
 
-    private let type: PosterType
+    private let type: PosterDisplayType
     private var onSelect: () -> Void
 
     var body: some View {
@@ -29,7 +29,7 @@ struct SeeAllPosterButton: View {
                         .font(.title3)
                 }
             }
-            .posterStyle(type: type, width: type.width)
+            .posterStyle(type)
         }
         .buttonStyle(.card)
     }
@@ -37,7 +37,7 @@ struct SeeAllPosterButton: View {
 
 extension SeeAllPosterButton {
 
-    init(type: PosterType) {
+    init(type: PosterDisplayType) {
         self.init(
             type: type,
             onSelect: {}

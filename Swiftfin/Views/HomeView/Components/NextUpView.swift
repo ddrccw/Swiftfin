@@ -3,9 +3,10 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
+import CollectionHStack
 import Defaults
 import JellyfinAPI
 import SwiftUI
@@ -23,34 +24,53 @@ extension HomeView {
         @ObservedObject
         var viewModel: NextUpLibraryViewModel
 
-        private var items: [PosterButtonType<BaseItemDto>] {
-            viewModel.items.prefix(20).asArray.map { .item($0) }
-        }
+        private var onSetPlayed: (BaseItemDto) -> Void
 
         var body: some View {
-            PosterHStack(
-                title: L10n.nextUp,
-                type: nextUpPosterType,
-                items: items
-            )
-            .trailing {
-                SeeAllButton()
-                    .onSelect {
-                        router.route(to: \.basicLibrary, .init(title: L10n.nextUp, viewModel: viewModel))
+            if viewModel.elements.isNotEmpty {
+                PosterHStack(
+                    title: L10n.nextUp,
+                    type: nextUpPosterType,
+                    items: viewModel.elements
+                )
+                .content { item in
+                    if item.type == .episode {
+                        PosterButton.EpisodeContentSubtitleContent(item: item)
+                    } else {
+                        PosterButton.TitleSubtitleContentView(item: item)
                     }
-            }
-            .contextMenu { state in
-                if case let PosterButtonType.item(item) = state {
+                }
+                .contextMenu { item in
                     Button {
-                        viewModel.markPlayed(item: item)
+                        onSetPlayed(item)
                     } label: {
                         Label(L10n.played, systemImage: "checkmark.circle")
                     }
                 }
-            }
-            .onSelect { item in
-                router.route(to: \.item, item)
+                .onSelect { item in
+                    router.route(to: \.item, item)
+                }
+                .trailing {
+                    SeeAllButton()
+                        .onSelect {
+                            router.route(to: \.library, viewModel)
+                        }
+                }
             }
         }
+    }
+}
+
+extension HomeView.NextUpView {
+
+    init(viewModel: NextUpLibraryViewModel) {
+        self.init(
+            viewModel: viewModel,
+            onSetPlayed: { _ in }
+        )
+    }
+
+    func onSetPlayed(perform action: @escaping (BaseItemDto) -> Void) -> Self {
+        copy(modifying: \.onSetPlayed, with: action)
     }
 }

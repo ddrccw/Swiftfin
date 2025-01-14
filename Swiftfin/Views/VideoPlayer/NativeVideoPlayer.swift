@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import AVKit
@@ -13,6 +13,9 @@ import JellyfinAPI
 import SwiftUI
 
 struct NativeVideoPlayer: View {
+
+    @Environment(\.scenePhase)
+    var scenePhase
 
     @EnvironmentObject
     private var router: VideoPlayerCoordinator.Router
@@ -67,7 +70,7 @@ class UINativeVideoPlayerViewController: AVPlayerViewController {
 
         super.init(nibName: nil, bundle: nil)
 
-        let newPlayer: AVPlayer = .init(url: manager.currentViewModel.hlsPlaybackURL)
+        let newPlayer: AVPlayer = .init(url: manager.currentViewModel.playbackURL)
 
         newPlayer.allowsExternalPlayback = true
         newPlayer.appliesMediaSelectionCriteriaAutomatically = false
@@ -140,12 +143,14 @@ class UINativeVideoPlayerViewController: AVPlayerViewController {
     }
 
     private func createMetadata() -> [AVMetadataItem] {
-        let allMetadata: [AVMetadataIdentifier: Any?] = [
-            .commonIdentifierTitle: videoPlayerManager.currentViewModel.item.displayTitle,
-            .iTunesMetadataTrackSubTitle: videoPlayerManager.currentViewModel.item.subtitle,
-        ]
+        []
 
-        return allMetadata.compactMap { createMetadataItem(for: $0, value: $1) }
+//        let allMetadata: [AVMetadataIdentifier: Any?] = [
+//            .commonIdentifierTitle: videoPlayerManager.currentViewModel.item.displayTitle,
+//            .iTunesMetadataTrackSubTitle: videoPlayerManager.currentViewModel.item.subtitle,
+//        ]
+//
+//        return allMetadata.compactMap { createMetadataItem(for: $0, value: $1) }
     }
 
     private func createMetadataItem(

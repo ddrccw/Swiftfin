@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import JellyfinAPI
@@ -17,7 +17,7 @@ extension HomeView {
         private var router: HomeCoordinator.Router
 
         @ObservedObject
-        var viewModel: ItemTypeLibraryViewModel
+        var viewModel: RecentlyAddedLibraryViewModel
 
         private func itemSelectorImageSource(for item: BaseItemDto) -> ImageSource {
             if item.type == .episode {
@@ -36,11 +36,10 @@ extension HomeView {
         }
 
         var body: some View {
-            CinematicItemSelector(items: viewModel.items.prefix(20).asArray)
+            CinematicItemSelector(items: viewModel.elements.elements)
                 .topContent { item in
                     ImageView(itemSelectorImageSource(for: item))
-                        .resizingMode(.bottomLeft)
-                        .placeholder {
+                        .placeholder { _ in
                             EmptyView()
                         }
                         .failure {
@@ -48,16 +47,12 @@ extension HomeView {
                                 .font(.largeTitle)
                                 .fontWeight(.semibold)
                         }
-                        .padding2(.leading)
+                        .edgePadding(.leading)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 200, alignment: .bottomLeading)
                 }
                 .onSelect { item in
                     router.route(to: \.item, item)
-                }
-                .trailingContent {
-                    SeeAllPosterButton(type: .landscape)
-                        .onSelect {
-                            router.route(to: \.basicLibrary, .init(title: L10n.recentlyAdded, viewModel: viewModel))
-                        }
                 }
         }
     }

@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import CoreStore
@@ -11,12 +11,18 @@ import Defaults
 import Factory
 import Files
 import Foundation
+import JellyfinAPI
 import UIKit
+
+// TODO: should probably break out into a `Settings` and `AppSettings` view models
+//       - could clean up all settings view models
 
 final class SettingsViewModel: ViewModel {
 
     @Published
     var currentAppIcon: any AppIcon = PrimaryAppIcon.primary
+    @Published
+    var servers: [ServerState] = []
 
     override init() {
 
@@ -28,35 +34,31 @@ final class SettingsViewModel: ViewModel {
 
         if let appicon = PrimaryAppIcon.createCase(iconName: iconName) {
             currentAppIcon = appicon
-            super.init()
-            return
         }
 
         if let appicon = DarkAppIcon.createCase(iconName: iconName) {
             currentAppIcon = appicon
-            super.init()
-            return
         }
 
         if let appicon = InvertedDarkAppIcon.createCase(iconName: iconName) {
             currentAppIcon = appicon
-            super.init()
-            return
         }
 
         if let appicon = InvertedLightAppIcon.createCase(iconName: iconName) {
             currentAppIcon = appicon
-            super.init()
-            return
         }
 
         if let appicon = LightAppIcon.createCase(iconName: iconName) {
             currentAppIcon = appicon
-            super.init()
-            return
         }
 
         super.init()
+
+        do {
+            servers = try getServers()
+        } catch {
+            logger.critical("Could not retrieve servers")
+        }
     }
 
     func select(icon: any AppIcon) {
@@ -78,21 +80,17 @@ final class SettingsViewModel: ViewModel {
         }
     }
 
+    private func getServers() throws -> [ServerState] {
+        try SwiftfinStore
+            .dataStack
+            .fetchAll(From<ServerModel>())
+            .map(\.state)
+            .sorted(using: \.name)
+    }
+
     func signOut() {
-        Defaults[.lastServerUserID] = nil
-        Container.userSession.reset()
+        Defaults[.lastSignedInUserID] = .signedOut
+        Container.shared.currentUserSession.reset()
         Notifications[.didSignOut].post()
-    }
-
-    func resetUserSettings() {
-        UserDefaults.generalSuite.removeAll()
-    }
-
-    func removeAllServers() {
-        guard let allServers = try? SwiftfinStore.dataStack.fetchAll(From<ServerModel>()) else { return }
-
-        try? SwiftfinStore.dataStack.perform { transaction in
-            transaction.delete(allServers)
-        }
     }
 }

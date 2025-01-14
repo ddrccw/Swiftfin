@@ -3,134 +3,105 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Defaults
 import JellyfinAPI
 import SwiftUI
 
-// TODO: Look at something better for accomadating loading/noResults/other types
+// TODO: expose `ImageView.image` modifier for image aspect fill/fit
+// TODO: allow `content` to trigger `onSelect`?
+//       - not in button label to avoid context menu visual oddities
+// TODO: why don't shadows work with failure image views?
+//       - due to `Color`?
+
+/// Retrieving images by exact pixel dimensions is a bit
+/// intense for normal usage and eases cache usage and modifications.
+private let landscapeMaxWidth: CGFloat = 200
+private let portraitMaxWidth: CGFloat = 200
 
 struct PosterButton<Item: Poster>: View {
 
-    private var state: PosterButtonType<Item>
-    private var type: PosterType
-    private var itemScale: CGFloat
-    private var horizontalAlignment: HorizontalAlignment
-    private var content: (PosterButtonType<Item>) -> any View
-    private var imageOverlay: (PosterButtonType<Item>) -> any View
-    private var contextMenu: (PosterButtonType<Item>) -> any View
+    private var item: Item
+    private var type: PosterDisplayType
+    private var content: () -> any View
+    private var imageOverlay: () -> any View
+    private var contextMenu: () -> any View
     private var onSelect: () -> Void
-    private var singleImage: Bool
 
-    private var itemWidth: CGFloat {
-        type.width * itemScale
-    }
-
-    @ViewBuilder
-    private var loadingPoster: some View {
-        Color.secondarySystemFill
-            .posterStyle(type: type, width: itemWidth)
-    }
-
-    @ViewBuilder
-    private var noResultsPoster: some View {
-        Color.secondarySystemFill
-            .posterStyle(type: type, width: itemWidth)
-    }
-
-    @ViewBuilder
-    private func poster(from item: any Poster) -> some View {
-        Group {
-            switch type {
-            case .portrait:
-                ImageView(item.portraitPosterImageSource(maxWidth: itemWidth))
-                    .failure {
-                        InitialFailureView(item.displayTitle.initials)
-                    }
-            case .landscape:
-                ImageView(item.landscapePosterImageSources(maxWidth: itemWidth, single: singleImage))
-                    .failure {
-                        InitialFailureView(item.displayTitle.initials)
-                    }
-            }
+    private func imageView(from item: Item) -> ImageView {
+        switch type {
+        case .landscape:
+            ImageView(item.landscapeImageSources(maxWidth: landscapeMaxWidth))
+        case .portrait:
+            ImageView(item.portraitImageSources(maxWidth: portraitMaxWidth))
         }
     }
 
     var body: some View {
-        VStack(alignment: horizontalAlignment) {
-
+        VStack(alignment: .leading) {
             Button {
                 onSelect()
             } label: {
-                Group {
-                    switch state {
-                    case .loading:
-                        loadingPoster
-                    case .noResult:
-                        noResultsPoster
-                    case let .item(item):
-                        poster(from: item)
-                    }
-                }
-                .overlay {
-                    imageOverlay(state)
+                ZStack {
+                    Color.clear
+
+                    imageView(from: item)
+                        .failure {
+                            if item.showTitle {
+                                SystemImageContentView(systemName: item.systemImage)
+                            } else {
+                                SystemImageContentView(
+                                    title: item.displayTitle,
+                                    systemName: item.systemImage
+                                )
+                            }
+                        }
+
+                    imageOverlay()
                         .eraseToAnyView()
-                        .posterStyle(type: type, width: itemWidth)
                 }
+                .posterStyle(type)
             }
+            .buttonStyle(.plain)
             .contextMenu(menuItems: {
-                contextMenu(state)
+                contextMenu()
                     .eraseToAnyView()
             })
-            .posterStyle(type: type, width: itemWidth)
             .posterShadow()
 
-            content(state)
+            content()
                 .eraseToAnyView()
         }
-        .frame(width: itemWidth)
     }
 }
 
 extension PosterButton {
 
     init(
-        state: PosterButtonType<Item>,
-        type: PosterType,
-        singleImage: Bool = false
+        item: Item,
+        type: PosterDisplayType
     ) {
         self.init(
-            state: state,
+            item: item,
             type: type,
-            itemScale: 1,
-            horizontalAlignment: .leading,
-            content: { DefaultContentView(state: $0) },
-            imageOverlay: { DefaultOverlay(state: $0) },
-            contextMenu: { _ in EmptyView() },
-            onSelect: {},
-            singleImage: singleImage
+            content: { TitleSubtitleContentView(item: item) },
+            imageOverlay: { DefaultOverlay(item: item) },
+            contextMenu: { EmptyView() },
+            onSelect: {}
         )
     }
 
-    func horizontalAlignment(_ alignment: HorizontalAlignment) -> Self {
-        copy(modifying: \.horizontalAlignment, with: alignment)
-    }
-
-    func scaleItem(_ scale: CGFloat) -> Self {
-        copy(modifying: \.itemScale, with: scale)
-    }
-
-    func content(@ViewBuilder _ content: @escaping (PosterButtonType<Item>) -> any View) -> Self {
+    func content(@ViewBuilder _ content: @escaping () -> any View) -> Self {
         copy(modifying: \.content, with: content)
     }
 
-    func imageOverlay(@ViewBuilder _ content: @escaping (PosterButtonType<Item>) -> any View) -> Self {
+    func imageOverlay(@ViewBuilder _ content: @escaping () -> any View) -> Self {
         copy(modifying: \.imageOverlay, with: content)
     }
 
-    func contextMenu(@ViewBuilder _ content: @escaping (PosterButtonType<Item>) -> any View) -> Self {
+    func contextMenu(@ViewBuilder _ content: @escaping () -> any View) -> Self {
         copy(modifying: \.contextMenu, with: content)
     }
 
@@ -139,63 +110,113 @@ extension PosterButton {
     }
 }
 
+// TODO: Shared default content with tvOS?
+//       - check if content is generally same
+
 extension PosterButton {
 
     // MARK: Default Content
 
-    struct DefaultContentView: View {
+    struct TitleContentView: View {
 
-        let state: PosterButtonType<Item>
-
-        @ViewBuilder
-        private var title: some View {
-            Group {
-                switch state {
-                case .loading:
-                    String(repeating: "a", count: Int.random(in: 5 ..< 8)).text
-                        .redacted(reason: .placeholder)
-                case .noResult:
-                    L10n.noResults.text
-                case let .item(item):
-                    if item.showTitle {
-                        Text(item.displayTitle)
-                    } else {
-                        EmptyView()
-                    }
-                }
-            }
-            .font(.footnote.weight(.regular))
-            .foregroundColor(.primary)
-            .lineLimit(2)
-        }
-
-        @ViewBuilder
-        private var subtitle: some View {
-            Group {
-                switch state {
-                case .loading:
-                    String(repeating: "a", count: Int.random(in: 8 ..< 15)).text
-                        .redacted(reason: .placeholder)
-                case .noResult:
-                    L10n.noResults.text
-                case let .item(item):
-                    if let subtitle = item.subtitle {
-                        Text(subtitle)
-                    } else {
-                        EmptyView()
-                    }
-                }
-            }
-            .font(.caption.weight(.medium))
-            .foregroundColor(.secondary)
-            .lineLimit(2)
-        }
+        let item: Item
 
         var body: some View {
-            VStack(alignment: .leading) {
-                title
+            Text(item.displayTitle)
+                .font(.footnote.weight(.regular))
+                .foregroundColor(.primary)
+        }
+    }
 
-                subtitle
+    struct SubtitleContentView: View {
+
+        let item: Item
+
+        var body: some View {
+            Text(item.subtitle ?? " ")
+                .font(.caption.weight(.medium))
+                .foregroundColor(.secondary)
+        }
+    }
+
+    struct TitleSubtitleContentView: View {
+
+        let item: Item
+
+        var body: some View {
+            iOS15View {
+                VStack(alignment: .leading, spacing: 0) {
+                    if item.showTitle {
+                        TitleContentView(item: item)
+                            .backport
+                            .lineLimit(1, reservesSpace: true)
+                            .iOS15 { v in
+                                v.font(.footnote.weight(.regular))
+                            }
+                    }
+
+                    SubtitleContentView(item: item)
+                        .backport
+                        .lineLimit(1, reservesSpace: true)
+                        .iOS15 { v in
+                            v.font(.caption.weight(.medium))
+                        }
+                }
+            } content: {
+                VStack(alignment: .leading) {
+                    if item.showTitle {
+                        TitleContentView(item: item)
+                            .backport
+                            .lineLimit(1, reservesSpace: true)
+                    }
+
+                    SubtitleContentView(item: item)
+                        .backport
+                        .lineLimit(1, reservesSpace: true)
+                }
+            }
+        }
+    }
+
+    // Content specific for BaseItemDto episode items
+    struct EpisodeContentSubtitleContent: View {
+
+        @Default(.Customization.Episodes.useSeriesLandscapeBackdrop)
+        private var useSeriesLandscapeBackdrop
+
+        let item: Item
+
+        var body: some View {
+            if let item = item as? BaseItemDto {
+                // Unsure why this needs 0 spacing
+                // compared to other default content
+                VStack(alignment: .leading, spacing: 0) {
+                    if item.showTitle, let seriesName = item.seriesName {
+                        Text(seriesName)
+                            .font(.footnote.weight(.regular))
+                            .foregroundColor(.primary)
+                            .backport
+                            .lineLimit(1, reservesSpace: true)
+                    }
+
+                    SeparatorHStack {
+                        Text(item.seasonEpisodeLabel ?? .emptyDash)
+
+                        if item.showTitle || useSeriesLandscapeBackdrop {
+                            Text(item.displayTitle)
+                        } else if let seriesName = item.seriesName {
+                            Text(seriesName)
+                        }
+                    }
+                    .separator {
+                        Circle()
+                            .frame(width: 2, height: 2)
+                            .padding(.horizontal, 3)
+                    }
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                }
             }
         }
     }
@@ -215,30 +236,28 @@ extension PosterButton {
         @Default(.Customization.Indicators.showPlayed)
         private var showPlayed
 
-        let state: PosterButtonType<Item>
+        let item: Item
 
         var body: some View {
-            if case let PosterButtonType.item(item) = state {
-                ZStack {
-                    if let item = item as? BaseItemDto {
-                        if item.userData?.isPlayed ?? false {
-                            WatchedIndicator(size: 25)
-                                .visible(showPlayed)
+            ZStack {
+                if let item = item as? BaseItemDto {
+                    if item.userData?.isPlayed ?? false {
+                        WatchedIndicator(size: 25)
+                            .visible(showPlayed)
+                    } else {
+                        if (item.userData?.playbackPositionTicks ?? 0) > 0 {
+                            ProgressIndicator(progress: (item.userData?.playedPercentage ?? 0) / 100, height: 5)
+                                .visible(showProgress)
                         } else {
-                            if (item.userData?.playbackPositionTicks ?? 0) > 0 {
-                                ProgressIndicator(progress: (item.userData?.playedPercentage ?? 0) / 100, height: 5)
-                                    .visible(showProgress)
-                            } else {
-                                UnwatchedIndicator(size: 25)
-                                    .foregroundColor(accentColor)
-                                    .visible(showUnplayed)
-                            }
+                            UnwatchedIndicator(size: 25)
+                                .foregroundColor(accentColor)
+                                .visible(showUnplayed)
                         }
+                    }
 
-                        if item.userData?.isFavorite ?? false {
-                            FavoriteIndicator(size: 25)
-                                .visible(showFavorited)
-                        }
+                    if item.userData?.isFavorite ?? false {
+                        FavoriteIndicator(size: 25)
+                            .visible(showFavorited)
                     }
                 }
             }

@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Factory
@@ -38,10 +38,10 @@ class DownloadTask: NSObject, ObservableObject {
         case ready
     }
 
-    @Injected(LogManager.service)
+    @Injected(\.logService)
     private var logger
-    @Injected(Container.userSession)
-    private var userSession
+    @Injected(\.currentUserSession)
+    private var userSession: UserSession!
 
     @Published
     var state: State = .ready
@@ -80,8 +80,7 @@ class DownloadTask: NSObject, ObservableObject {
                 await MainActor.run {
                     self.state = .error(error)
 
-                    Container.downloadManager.callAsFunction()
-                        .remove(task: self)
+                    Container.shared.downloadManager.reset()
                 }
                 return
             }
@@ -155,7 +154,7 @@ class DownloadTask: NSObject, ObservableObject {
         }
 
         guard let response = try? await userSession.client.download(
-            for: .init(url: imageURL.absoluteString).withResponse(URL.self),
+            for: .init(url: imageURL).withResponse(URL.self),
             delegate: self
         ) else { return }
 
@@ -178,7 +177,7 @@ class DownloadTask: NSObject, ObservableObject {
         }
 
         guard let response = try? await userSession.client.download(
-            for: .init(url: imageURL.absoluteString).withResponse(URL.self),
+            for: .init(url: imageURL).withResponse(URL.self),
             delegate: self
         ) else { return }
 
@@ -284,8 +283,7 @@ extension DownloadTask: URLSessionDownloadDelegate {
         DispatchQueue.main.async {
             self.state = .error(error)
 
-            Container.downloadManager.callAsFunction()
-                .remove(task: self)
+            Container.shared.downloadManager.reset()
         }
     }
 
@@ -295,8 +293,7 @@ extension DownloadTask: URLSessionDownloadDelegate {
         DispatchQueue.main.async {
             self.state = .error(error)
 
-            Container.downloadManager.callAsFunction()
-                .remove(task: self)
+            Container.shared.downloadManager.reset()
         }
     }
 }

@@ -3,25 +3,124 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
+import CollectionHStack
 import Defaults
+import IdentifiedCollections
 import JellyfinAPI
 import SwiftUI
+
+// TODO: rename `AboutItemView`
+// TODO: see what to do about bottom padding
+//       - don't like it adds more than the edge
+//       - just have this determine bottom padding
+//         instead of scrollviews?
 
 extension ItemView {
 
     struct AboutView: View {
 
-        @Default(.accentColor)
-        private var accentColor
+        private enum AboutViewItem: Identifiable {
+            case image
+            case overview
+            case mediaSource(MediaSourceInfo)
+            case ratings
 
-        @EnvironmentObject
-        private var router: ItemCoordinator.Router
+            var id: String? {
+                switch self {
+                case .image:
+                    return "image"
+                case .overview:
+                    return "overview"
+                case let .mediaSource(source):
+                    return source.id
+                case .ratings:
+                    return "ratings"
+                }
+            }
+        }
 
         @ObservedObject
         var viewModel: ItemViewModel
+
+        @State
+        private var contentSize: CGSize = .zero
+
+        private var items: [AboutViewItem] {
+            var items: [AboutViewItem] = [
+                .image,
+                .overview,
+            ]
+
+            if let mediaSources = viewModel.item.mediaSources {
+                items.append(contentsOf: mediaSources.map { AboutViewItem.mediaSource($0) })
+            }
+
+            if viewModel.item.hasRatings {
+                items.append(.ratings)
+            }
+
+            return items
+        }
+
+        init(viewModel: ItemViewModel) {
+            self.viewModel = viewModel
+        }
+
+        // TODO: break out into a general solution for general use?
+        // use similar math from CollectionHStack
+        private var padImageWidth: CGFloat {
+            let portraitMinWidth: CGFloat = 140
+            let contentWidth = contentSize.width
+            let usableWidth = contentWidth - EdgeInsets.edgePadding * 2
+            var columns = CGFloat(Int(usableWidth / portraitMinWidth))
+            let preItemSpacing = (columns - 1) * (EdgeInsets.edgePadding / 2)
+            let preTotalNegative = EdgeInsets.edgePadding * 2 + preItemSpacing
+
+            if columns * portraitMinWidth + preTotalNegative > contentWidth {
+                columns -= 1
+            }
+
+            let itemSpacing = (columns - 1) * (EdgeInsets.edgePadding / 2)
+            let totalNegative = EdgeInsets.edgePadding * 2 + itemSpacing
+            let itemWidth = (contentWidth - totalNegative) / columns
+
+            return max(0, itemWidth)
+        }
+
+        private var phoneImageWidth: CGFloat {
+            let contentWidth = contentSize.width
+            let usableWidth = contentWidth - EdgeInsets.edgePadding * 2
+            let itemSpacing = (EdgeInsets.edgePadding / 2) * 2
+            let itemWidth = (usableWidth - itemSpacing) / 3
+
+            return max(0, itemWidth)
+        }
+
+        private var cardSize: CGSize {
+            let height = UIDevice.isPad ? padImageWidth * 3 / 2 : phoneImageWidth * 3 / 2
+            let width = height * 1.65
+
+            return CGSize(width: width, height: height)
+        }
+
+        @ViewBuilder
+        private var imageView: some View {
+            ZStack {
+                Color.clear
+
+                ImageView(
+                    viewModel.item.type == .episode ? viewModel.item.seriesImageSource(.primary, maxWidth: 300) : viewModel
+                        .item.imageSource(.primary, maxWidth: 300)
+                )
+                .accessibilityIgnoresInvertColors()
+            }
+            .posterStyle(.portrait)
+            .posterShadow()
+            .frame(width: UIDevice.isPad ? padImageWidth : phoneImageWidth)
+        }
 
         var body: some View {
             VStack(alignment: .leading) {
@@ -29,36 +128,36 @@ extension ItemView {
                     .font(.title2)
                     .fontWeight(.bold)
                     .accessibility(addTraits: [.isHeader])
-                    .padding(.horizontal)
-                    .if(UIDevice.isIPad) { view in
-                        view.padding(.horizontal)
-                    }
+                    .edgePadding(.horizontal)
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack {
-                        ImageView(
-                            viewModel.item.type == .episode ? viewModel.item.seriesImageSource(.primary, maxWidth: 300) : viewModel
-                                .item.imageSource(.primary, maxWidth: 300)
-                        )
-                        .posterStyle(type: .portrait, width: 130)
-                        .accessibilityIgnoresInvertColors()
-
+                CollectionHStack(
+                    uniqueElements: items,
+                    variadicWidths: true
+                ) { item in
+                    switch item {
+                    case .image:
+                        imageView
+                    case .overview:
                         OverviewCard(item: viewModel.item)
-
-                        if let mediaSources = viewModel.item.mediaSources {
-                            ForEach(mediaSources) { source in
-                                MediaSourcesCard(subtitle: mediaSources.count > 1 ? source.displayTitle : nil, source: source)
-                            }
-                        }
-
+                            .frame(width: cardSize.width, height: cardSize.height)
+                    case let .mediaSource(source):
+                        MediaSourcesCard(
+                            subtitle: (viewModel.item.mediaSources ?? []).count > 1 ? source.displayTitle : nil,
+                            source: source
+                        )
+                        .frame(width: cardSize.width, height: cardSize.height)
+                    case .ratings:
                         RatingsCard(item: viewModel.item)
-                    }
-                    .padding(.horizontal)
-                    .if(UIDevice.isIPad) { view in
-                        view.padding(.horizontal)
+                            .frame(width: cardSize.width, height: cardSize.height)
                     }
                 }
+                .clipsToBounds(false)
+                .insets(horizontal: EdgeInsets.edgePadding)
+                .itemSpacing(EdgeInsets.edgePadding / 2)
+                .scrollBehavior(.continuousLeadingEdge)
             }
+            .trackingSize($contentSize)
+            .id(viewModel.item.hashValue)
         }
     }
 }

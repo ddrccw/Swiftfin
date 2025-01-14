@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Defaults
@@ -58,7 +58,7 @@ extension VideoPlayer.Overlay {
             CapsuleSlider(progress: $currentProgressHandler.scrubbedProgress)
                 .isEditing(_isScrubbing.wrappedValue)
                 .trackMask {
-                    if chapterSlider && !viewModel.chapters.isEmpty {
+                    if chapterSlider && viewModel.chapters.isNotEmpty {
                         ChapterTrack()
                             .clipShape(Capsule())
                     } else {
@@ -91,7 +91,7 @@ extension VideoPlayer.Overlay {
             ThumbSlider(progress: $currentProgressHandler.scrubbedProgress)
                 .isEditing(_isScrubbing.wrappedValue)
                 .trackMask {
-                    if chapterSlider && !viewModel.chapters.isEmpty {
+                    if chapterSlider && viewModel.chapters.isNotEmpty {
                         ChapterTrack()
                             .clipShape(Capsule())
                     } else {
@@ -154,7 +154,7 @@ extension VideoPlayer.Overlay {
                 guard chapterSlider else { return }
                 let newChapter = viewModel.chapter(from: newValue)
                 if newChapter != currentChapter {
-                    if isScrubbing && Defaults[.hapticFeedback] {
+                    if isScrubbing {
                         UIDevice.impact(.light)
                     }
 

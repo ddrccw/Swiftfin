@@ -3,23 +3,16 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Defaults
 import SwiftUI
 
+// Note: Used for experimental settings that may be removed or implemented
+//       officially. Keep for future settings.
+
 struct ExperimentalSettingsView: View {
-
-    @Default(.Experimental.forceDirectPlay)
-    private var forceDirectPlay
-    @Default(.Experimental.syncSubtitleStateWithAdjacent)
-    private var syncSubtitleStateWithAdjacent
-
-    @Default(.Experimental.liveTVAlphaEnabled)
-    private var liveTVAlphaEnabled
-    @Default(.Experimental.liveTVForceDirectPlay)
-    private var liveTVForceDirectPlay
 
     var body: some View {
         SplitFormWindowView()
@@ -29,27 +22,7 @@ struct ExperimentalSettingsView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(maxWidth: 400)
             }
-            .contentView {
-                Section {
-
-                    Toggle("Force Direct Play", isOn: $forceDirectPlay)
-
-                    Toggle("Sync Subtitles with Adjacent Episodes", isOn: $syncSubtitleStateWithAdjacent)
-
-                } header: {
-                    L10n.experimental.text
-                }
-
-                Section {
-
-                    Toggle("Live TV (Alpha)", isOn: $liveTVAlphaEnabled)
-
-                    Toggle("Live TV Force Direct Play", isOn: $liveTVForceDirectPlay)
-
-                } header: {
-                    Text("Live TV")
-                }
-            }
+            .contentView {}
             .navigationTitle(L10n.experimental)
     }
 }

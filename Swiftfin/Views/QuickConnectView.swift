@@ -3,29 +3,36 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
+import JellyfinAPI
 import SwiftUI
 
 struct QuickConnectView: View {
 
     @EnvironmentObject
-    private var router: QuickConnectCoordinator.Router
+    private var router: UserSignInCoordinator.Router
 
     @ObservedObject
-    var viewModel: UserSignInViewModel
+    private var viewModel: QuickConnect
 
-    var body: some View {
+    init(quickConnect: QuickConnect) {
+        self.viewModel = quickConnect
+    }
+
+    private func pollingView(code: String) -> some View {
         VStack(alignment: .leading, spacing: 20) {
-            L10n.quickConnectStep1.text
+            BulletedList {
+                L10n.quickConnectStep1.text
+                    .padding(.bottom)
+                L10n.quickConnectStep2.text
+                    .padding(.bottom)
+                L10n.quickConnectStep3.text
+                    .padding(.bottom)
+            }
 
-            L10n.quickConnectStep2.text
-
-            L10n.quickConnectStep3.text
-                .padding(.bottom)
-
-            Text(viewModel.quickConnectCode ?? "------")
+            Text(code)
                 .tracking(10)
                 .font(.largeTitle)
                 .monospacedDigit()
@@ -33,22 +40,34 @@ struct QuickConnectView: View {
 
             Spacer()
         }
-        .padding(.horizontal)
-        .navigationTitle(L10n.quickConnect)
-        .onAppear {
-            Task {
-                for await result in viewModel.startQuickConnect() {
-                    guard let secret = result.secret else { continue }
-                    try? await viewModel.signIn(quickConnectSecret: secret)
-                    router.dismissCoordinator()
-                }
+        .frame(maxWidth: .infinity)
+        .edgePadding()
+    }
+
+    var body: some View {
+        WrappedView {
+            switch viewModel.state {
+            case .idle, .authenticated:
+                Color.clear
+            case .retrievingCode:
+                ProgressView()
+            case let .polling(code):
+                pollingView(code: code)
+            case let .error(error):
+                ErrorView(error: error)
             }
         }
-        .onDisappear {
-            viewModel.stopQuickConnectAuthCheck()
+        .edgePadding()
+        .navigationTitle(L10n.quickConnect)
+        .navigationBarTitleDisplayMode(.inline)
+        .onFirstAppear {
+            viewModel.start()
         }
-        .navigationCloseButton {
-            router.dismissCoordinator()
+        .onDisappear {
+            viewModel.stop()
+        }
+        .navigationBarCloseButton {
+            router.popLast()
         }
     }
 }

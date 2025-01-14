@@ -3,37 +3,49 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
-import CollectionView
 import Defaults
 import JellyfinAPI
 import SwiftUI
 
+// TODO: have a `SearchLibraryViewModel` that allows paging on searched items?
+// TODO: implement search view result type between `PosterHStack`
+//       and `ListHStack` (3 row list columns)? (iOS only)
+// TODO: have programs only pull recommended/current?
+//       - have progress overlay
 struct SearchView: View {
 
+    @Default(.Customization.Search.enabledDrawerFilters)
+    private var enabledDrawerFilters
     @Default(.Customization.searchPosterType)
     private var searchPosterType
 
     @EnvironmentObject
+    private var mainRouter: MainCoordinator.Router
+    @EnvironmentObject
     private var router: SearchCoordinator.Router
 
-    @ObservedObject
-    var viewModel: SearchViewModel
-
     @State
-    private var searchText = ""
+    private var searchQuery = ""
+
+    @StateObject
+    private var viewModel = SearchViewModel()
+
+    private func errorView(with error: some Error) -> some View {
+        ErrorView(error: error)
+            .onRetry {
+                viewModel.send(.search(query: searchQuery))
+            }
+    }
 
     @ViewBuilder
     private var suggestionsView: some View {
         VStack(spacing: 20) {
-            ForEach(viewModel.suggestions, id: \.id) { item in
-                Button {
-                    searchText = item.displayTitle
-                } label: {
-                    Text(item.displayTitle)
-                        .font(.body)
+            ForEach(viewModel.suggestions) { item in
+                Button(item.displayTitle) {
+                    searchQuery = item.displayTitle
                 }
             }
         }
@@ -43,33 +55,55 @@ struct SearchView: View {
     private var resultsView: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                if !viewModel.movies.isEmpty {
+                if viewModel.movies.isNotEmpty {
                     itemsSection(title: L10n.movies, keyPath: \.movies, posterType: searchPosterType)
                 }
 
-                if !viewModel.collections.isEmpty {
-                    itemsSection(title: L10n.collections, keyPath: \.collections, posterType: searchPosterType)
-                }
-
-                if !viewModel.series.isEmpty {
+                if viewModel.series.isNotEmpty {
                     itemsSection(title: L10n.tvShows, keyPath: \.series, posterType: searchPosterType)
                 }
 
-                if !viewModel.episodes.isEmpty {
+                if viewModel.collections.isNotEmpty {
+                    itemsSection(title: L10n.collections, keyPath: \.collections, posterType: searchPosterType)
+                }
+
+                if viewModel.episodes.isNotEmpty {
                     itemsSection(title: L10n.episodes, keyPath: \.episodes, posterType: searchPosterType)
                 }
 
-                if !viewModel.people.isEmpty {
+                if viewModel.programs.isNotEmpty {
+                    itemsSection(title: L10n.programs, keyPath: \.programs, posterType: .landscape)
+                }
+
+                if viewModel.channels.isNotEmpty {
+                    itemsSection(title: L10n.channels, keyPath: \.channels, posterType: .portrait)
+                }
+
+                if viewModel.people.isNotEmpty {
                     itemsSection(title: L10n.people, keyPath: \.people, posterType: .portrait)
                 }
             }
+            .edgePadding(.vertical)
         }
     }
 
-    private func baseItemOnSelect(_ item: BaseItemDto) {
-        if item.type == .person {
-            router.route(to: \.library, .init(parent: item, type: .person, filters: .init()))
-        } else {
+    private func select(_ item: BaseItemDto) {
+        switch item.type {
+        case .person:
+            let viewModel = ItemLibraryViewModel(parent: item)
+            router.route(to: \.library, viewModel)
+        case .program:
+            mainRouter.route(
+                to: \.liveVideoPlayer,
+                LiveVideoPlayerManager(program: item)
+            )
+        case .tvChannel:
+            guard let mediaSource = item.mediaSources?.first else { return }
+            mainRouter.route(
+                to: \.liveVideoPlayer,
+                LiveVideoPlayerManager(item: item, mediaSource: mediaSource)
+            )
+        default:
             router.route(to: \.item, item)
         }
     }
@@ -77,44 +111,67 @@ struct SearchView: View {
     @ViewBuilder
     private func itemsSection(
         title: String,
-        keyPath: ReferenceWritableKeyPath<SearchViewModel, [BaseItemDto]>,
-        posterType: PosterType
+        keyPath: KeyPath<SearchViewModel, [BaseItemDto]>,
+        posterType: PosterDisplayType
     ) -> some View {
         PosterHStack(
             title: title,
             type: posterType,
-            items: viewModel[keyPath: keyPath].map { .item($0) }
+            items: viewModel[keyPath: keyPath]
         )
-        .onSelect { item in
-            baseItemOnSelect(item)
+        .trailing {
+            SeeAllButton()
+                .onSelect {
+                    let viewModel = PagingLibraryViewModel(
+                        title: title,
+                        id: "search-\(keyPath.hashValue)",
+                        viewModel[keyPath: keyPath]
+                    )
+                    router.route(to: \.library, viewModel)
+                }
         }
+        .onSelect(select)
     }
 
     var body: some View {
-        Group {
-            if searchText.isEmpty {
-                suggestionsView
-            } else if !viewModel.isLoading && viewModel.noResults {
-                L10n.noResults.text
-            } else {
-                resultsView
+        WrappedView {
+            Group {
+                switch viewModel.state {
+                case let .error(error):
+                    errorView(with: error)
+                case .initial:
+                    suggestionsView
+                case .content:
+                    if viewModel.hasNoResults {
+                        L10n.noResults.text
+                    } else {
+                        resultsView
+                    }
+                case .searching:
+                    ProgressView()
+                }
             }
+            .transition(.opacity.animation(.linear(duration: 0.1)))
         }
-        .onChange(of: searchText) { newText in
-            viewModel.search(with: newText)
-        }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .navigationTitle(L10n.search)
         .navigationBarTitleDisplayMode(.inline)
-        .navBarDrawer {
-            ScrollView(.horizontal, showsIndicators: false) {
-                FilterDrawerHStack(viewModel: viewModel.filterViewModel)
-                    .onSelect { filterCoordinatorParameters in
-                        router.route(to: \.filter, filterCoordinatorParameters)
-                    }
-                    .padding(.horizontal)
-                    .padding(.vertical, 1)
-            }
+        .navigationBarFilterDrawer(
+            viewModel: viewModel.filterViewModel,
+            types: enabledDrawerFilters
+        ) {
+            router.route(to: \.filter, $0)
         }
-        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: L10n.search)
+        .onFirstAppear {
+            viewModel.send(.getSuggestions)
+        }
+        .onChange(of: searchQuery) { newValue in
+            viewModel.send(.search(query: newValue))
+        }
+        .searchable(
+            text: $searchQuery,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: L10n.search
+        )
     }
 }

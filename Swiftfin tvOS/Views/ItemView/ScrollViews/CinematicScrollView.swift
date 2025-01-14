@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Defaults
@@ -67,8 +67,7 @@ extension ItemView {
                             maxWidth: UIScreen.main.bounds.width * 0.4,
                             maxHeight: 250
                         ))
-                        .resizingMode(.bottomLeft)
-                        .placeholder {
+                        .placeholder { _ in
                             EmptyView()
                         }
                         .failure {
@@ -79,7 +78,9 @@ extension ItemView {
                                 .multilineTextAlignment(.leading)
                                 .foregroundColor(.white)
                         }
+                        .aspectRatio(contentMode: .fit)
                         .padding(.bottom)
+                        .frame(maxHeight: 250, alignment: .bottomLeading)
 
                         if let tagline = viewModel.item.taglines?.first {
                             Text(tagline)
@@ -97,15 +98,15 @@ extension ItemView {
 
                             DotHStack {
                                 if let firstGenre = viewModel.item.genres?.first {
-                                    firstGenre.text
+                                    Text(firstGenre)
                                 }
 
                                 if let premiereYear = viewModel.item.premiereDateYear {
-                                    premiereYear.text
+                                    Text(premiereYear)
                                 }
 
-                                if let playButtonitem = viewModel.playButtonItem, let runtime = playButtonitem.getItemRuntime() {
-                                    runtime.text
+                                if let playButtonitem = viewModel.playButtonItem, let runtime = playButtonitem.runTimeLabel {
+                                    Text(runtime)
                                 }
                             }
                             .font(.caption)
@@ -129,7 +130,7 @@ extension ItemView {
                 }
             }
             .padding(.horizontal, 50)
-            .onChange(of: focusedLayer) { layer in
+            .onChange(of: focusedLayer) { _, layer in
                 if layer == .top {
                     focusedLayer = .playButton
                 }

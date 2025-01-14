@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import UIKit
@@ -34,16 +34,10 @@ extension UIApplication {
     }
 
     func setAppearance(_ newAppearance: UIUserInterfaceStyle) {
-        keyWindow?.overrideUserInterfaceStyle = newAppearance
-    }
+        guard let keyWindow else { return }
 
-    #if os(iOS)
-    func setNavigationBackButtonAccentColor(_ newColor: UIColor) {
-        let config = UIImage.SymbolConfiguration(paletteColors: [newColor.overlayColor, newColor])
-        let backButtonBackgroundImage = UIImage(systemName: "chevron.backward.circle.fill", withConfiguration: config)
-        let barAppearance = UINavigationBar.appearance()
-        barAppearance.backIndicatorImage = backButtonBackgroundImage
-        barAppearance.backIndicatorTransitionMaskImage = backButtonBackgroundImage
+        UIView.transition(with: keyWindow, duration: 0.2, options: .transitionCrossDissolve) {
+            keyWindow.overrideUserInterfaceStyle = newAppearance
+        }
     }
-    #endif
 }

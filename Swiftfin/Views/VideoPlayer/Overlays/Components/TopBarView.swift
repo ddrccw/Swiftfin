@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Defaults
@@ -29,13 +29,12 @@ extension VideoPlayer.Overlay {
                 HStack(alignment: .center) {
                     Button {
                         videoPlayerProxy.stop()
-                        router.dismissCoordinator {
-                            AppDelegate.changeOrientation(.portrait)
-                        }
+                        router.dismissCoordinator()
                     } label: {
                         Image(systemName: "xmark")
                             .padding()
                     }
+                    .contentShape(Rectangle())
                     .buttonStyle(ScalingButtonStyle(scale: 0.8))
                     .frame(width: 45, height: 45)
                     .contentShape(Rectangle())
@@ -57,15 +56,15 @@ extension VideoPlayer.Overlay {
                 .tint(Color.white)
                 .foregroundColor(Color.white)
 
-                if let subtitle = viewModel.item.subtitle {
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundColor(.white)
-                        .alignmentGuide(.VideoPlayerTitleAlignmentGuide) { dimensions in
-                            dimensions[.leading]
-                        }
-                        .offset(y: -10)
-                }
+//                if let subtitle = viewModel.item.subtitle {
+//                    Text(subtitle)
+//                        .font(.subheadline)
+//                        .foregroundColor(.white)
+//                        .alignmentGuide(.VideoPlayerTitleAlignmentGuide) { dimensions in
+//                            dimensions[.leading]
+//                        }
+//                        .offset(y: -10)
+//                }
             }
         }
     }

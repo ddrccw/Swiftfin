@@ -3,13 +3,14 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Combine
 import JellyfinAPI
 import SwiftUI
 
+// TODO: make new protocol for cinematic view image provider
 // TODO: better name
 
 struct CinematicItemSelector<Item: Poster>: View {
@@ -32,32 +33,12 @@ struct CinematicItemSelector<Item: Poster>: View {
     var body: some View {
         ZStack(alignment: .bottomLeading) {
 
-            ZStack {
-                CinematicBackgroundView(viewModel: viewModel, initialItem: items.first)
-                    .ignoresSafeArea()
-
-                LinearGradient(
-                    stops: [
-                        .init(color: .clear, location: 0.5),
-                        .init(color: .black.opacity(0.4), location: 0.6),
-                        .init(color: .black, location: 1),
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            }
-            .mask {
-                LinearGradient(
-                    stops: [
-                        .init(color: .white, location: 0.9),
-                        .init(color: .clear, location: 1),
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            }
+            Color.clear
 
             VStack(alignment: .leading, spacing: 10) {
+
+                Spacer()
+
                 if let currentItem = viewModel.currentItem {
                     topContent(currentItem)
                         .eraseToAnyView()
@@ -74,9 +55,38 @@ struct CinematicItemSelector<Item: Poster>: View {
                     .focusedItem($focusedItem)
             }
         }
+        .background(alignment: .top) {
+            ZStack {
+                CinematicBackgroundView(
+                    viewModel: viewModel,
+                    initialItem: items.first
+                )
+
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0.5),
+                        .init(color: .black.opacity(0.4), location: 0.6),
+                        .init(color: .black, location: 1),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+            .frame(height: UIScreen.main.bounds.height)
+            .mask {
+                LinearGradient(
+                    stops: [
+                        .init(color: .white, location: 0.9),
+                        .init(color: .clear, location: 1),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        }
         .frame(height: UIScreen.main.bounds.height - 75)
         .frame(maxWidth: .infinity)
-        .onChange(of: focusedItem) { newValue in
+        .onChange(of: focusedItem) { _, newValue in
             guard let newValue else { return }
             viewModel.select(item: newValue)
         }

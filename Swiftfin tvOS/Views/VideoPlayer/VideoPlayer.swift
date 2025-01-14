@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Defaults
@@ -18,6 +18,9 @@ struct VideoPlayer: View {
         case main
         case smallMenu
     }
+
+    @Environment(\.scenePhase)
+    private var scenePhase
 
     @EnvironmentObject
     private var router: VideoPlayerCoordinator.Router
@@ -71,7 +74,10 @@ struct VideoPlayer: View {
                 .environment(\.isPresentingOverlay, $isPresentingOverlay)
                 .environment(\.isScrubbing, $isScrubbing)
         }
-        .onChange(of: videoPlayerManager.currentProgressHandler.scrubbedProgress) { newValue in
+        .onChange(of: videoPlayerManager.currentProgressHandler.scrubbedProgress) { _, newValue in
+            guard !newValue.isNaN && !newValue.isInfinite else {
+                return
+            }
             DispatchQueue.main.async {
                 videoPlayerManager.currentProgressHandler
                     .scrubbedSeconds = Int(CGFloat(videoPlayerManager.currentViewModel.item.runTimeSeconds) * newValue)
@@ -81,7 +87,7 @@ struct VideoPlayer: View {
 
     @ViewBuilder
     private var loadingView: some View {
-        Text("Retrieving media information")
+        Text(L10n.retrievingMediaInformation)
     }
 
     var body: some View {
@@ -96,9 +102,19 @@ struct VideoPlayer: View {
             }
         }
         .ignoresSafeArea()
-        .onChange(of: isScrubbing) { newValue in
+        .onChange(of: isScrubbing) { _, newValue in
             guard !newValue else { return }
             videoPlayerManager.proxy.setTime(.seconds(currentProgressHandler.scrubbedSeconds))
+        }
+        .onScenePhase(.active) {
+            if Defaults[.VideoPlayer.Transition.playOnActive] {
+                videoPlayerManager.proxy.play()
+            }
+        }
+        .onScenePhase(.background) {
+            if Defaults[.VideoPlayer.Transition.pauseOnBackground] {
+                videoPlayerManager.proxy.pause()
+            }
         }
     }
 }

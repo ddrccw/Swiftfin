@@ -3,10 +3,11 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Foundation
+import JellyfinAPI
 import Stinsen
 import SwiftUI
 
@@ -19,6 +20,8 @@ final class MediaCoordinator: NavigationCoordinatable {
     #if os(tvOS)
     @Route(.modal)
     var library = makeLibrary
+    @Route(.modal)
+    var liveTV = makeLiveTV
     #else
     @Route(.push)
     var library = makeLibrary
@@ -29,17 +32,12 @@ final class MediaCoordinator: NavigationCoordinatable {
     #endif
 
     #if os(tvOS)
-    func makeLibrary(parameters: LibraryCoordinator.Parameters) -> NavigationViewCoordinator<LibraryCoordinator> {
-        NavigationViewCoordinator(LibraryCoordinator(parameters: parameters))
+    func makeLibrary(viewModel: PagingLibraryViewModel<BaseItemDto>) -> NavigationViewCoordinator<LibraryCoordinator<BaseItemDto>> {
+        NavigationViewCoordinator(LibraryCoordinator(viewModel: viewModel))
     }
-
     #else
-    func makeLibrary(parameters: LibraryCoordinator.Parameters) -> LibraryCoordinator {
-        LibraryCoordinator(parameters: parameters)
-    }
-
-    func makeLiveTV() -> LiveTVCoordinator {
-        LiveTVCoordinator()
+    func makeLibrary(viewModel: PagingLibraryViewModel<BaseItemDto>) -> LibraryCoordinator<BaseItemDto> {
+        LibraryCoordinator(viewModel: viewModel)
     }
 
     func makeDownloads() -> DownloadListCoordinator {
@@ -47,8 +45,12 @@ final class MediaCoordinator: NavigationCoordinatable {
     }
     #endif
 
+    func makeLiveTV() -> LiveTVCoordinator {
+        LiveTVCoordinator()
+    }
+
     @ViewBuilder
     func makeStart() -> some View {
-        MediaView(viewModel: .init())
+        MediaView()
     }
 }

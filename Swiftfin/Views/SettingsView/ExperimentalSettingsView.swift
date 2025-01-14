@@ -3,43 +3,19 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Defaults
 import SwiftUI
 
+// Note: Used for experimental settings that may be removed or implemented
+//       officially. Keep for future settings.
+
 struct ExperimentalSettingsView: View {
 
-    @Default(.Experimental.forceDirectPlay)
-    private var forceDirectPlay
-    @Default(.Experimental.syncSubtitleStateWithAdjacent)
-    private var syncSubtitleStateWithAdjacent
-    @Default(.Experimental.liveTVAlphaEnabled)
-    private var liveTVAlphaEnabled
-    @Default(.Experimental.liveTVForceDirectPlay)
-    private var liveTVForceDirectPlay
-
     var body: some View {
-        Form {
-            Section {
-
-                Toggle("Force Direct Play", isOn: $forceDirectPlay)
-
-            } header: {
-                Text("Video Player")
-            }
-
-            Section {
-
-                Toggle("Live TV (Alpha)", isOn: $liveTVAlphaEnabled)
-
-                Toggle("Live TV Force Direct Play", isOn: $liveTVForceDirectPlay)
-
-            } header: {
-                Text("Live TV")
-            }
-        }
-        .navigationTitle(L10n.experimental)
+        Form {}
+            .navigationTitle(L10n.experimental)
     }
 }

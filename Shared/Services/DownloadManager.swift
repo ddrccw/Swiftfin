@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Factory
@@ -12,17 +12,12 @@ import Foundation
 import JellyfinAPI
 
 extension Container {
-
-    static let downloadManager = Factory(scope: .singleton) {
-        let manager = DownloadManager()
-        manager.clearTmp()
-        return manager
-    }
+    var downloadManager: Factory<DownloadManager> { self { DownloadManager() }.shared }
 }
 
 class DownloadManager: ObservableObject {
 
-    @Injected(LogManager.service)
+    @Injected(\.logService)
     private var logger
 
     @Published

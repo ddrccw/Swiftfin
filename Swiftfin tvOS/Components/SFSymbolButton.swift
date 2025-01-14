@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import SwiftUI
@@ -16,16 +16,7 @@ struct SFSymbolButton: UIViewRepresentable {
     private let systemName: String
     private let systemNameFocused: String?
 
-    func makeUIView(context: Context) -> some UIButton {
-        var configuration = UIButton.Configuration.plain()
-        configuration.cornerStyle = .capsule
-
-        let buttonAction = UIAction(title: "") { _ in
-            self.onSelect()
-        }
-
-        let button = UIButton(configuration: configuration, primaryAction: buttonAction)
-
+    private func makeButtonConfig(_ button: UIButton) {
         let symbolImageConfig = UIImage.SymbolConfiguration(pointSize: pointSize)
         let symbolImage = UIImage(systemName: systemName, withConfiguration: symbolImageConfig)
 
@@ -36,11 +27,26 @@ struct SFSymbolButton: UIViewRepresentable {
 
             button.setImage(focusedSymbolImage, for: .focused)
         }
+    }
+
+    func makeUIView(context: Context) -> some UIButton {
+        var configuration = UIButton.Configuration.plain()
+        configuration.cornerStyle = .capsule
+
+        let buttonAction = UIAction(title: "") { _ in
+            self.onSelect()
+        }
+
+        let button = UIButton(configuration: configuration, primaryAction: buttonAction)
+
+        makeButtonConfig(button)
 
         return button
     }
 
-    func updateUIView(_ uiView: UIViewType, context: Context) {}
+    func updateUIView(_ uiView: UIViewType, context: Context) {
+        makeButtonConfig(uiView)
+    }
 }
 
 extension SFSymbolButton {

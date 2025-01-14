@@ -3,12 +3,14 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Defaults
 import Factory
 import SwiftUI
+
+// TODO: fix play from beginning
 
 extension ItemView {
 
@@ -17,7 +19,7 @@ extension ItemView {
         @Default(.accentColor)
         private var accentColor
 
-        @Injected(LogManager.service)
+        @Injected(\.logService)
         private var logger
 
         @EnvironmentObject
@@ -25,6 +27,14 @@ extension ItemView {
 
         @ObservedObject
         var viewModel: ItemViewModel
+
+        private var title: String {
+            if let seriesViewModel = viewModel as? SeriesItemViewModel {
+                return seriesViewModel.playButtonItem?.seasonEpisodeLabel ?? L10n.play
+            } else {
+                return viewModel.playButtonItem?.playButtonLabel ?? L10n.play
+            }
+        }
 
         var body: some View {
             Button {
@@ -43,13 +53,14 @@ extension ItemView {
                         Image(systemName: "play.fill")
                             .font(.system(size: 20))
 
-                        Text(viewModel.playButtonText())
+                        Text(title)
                             .font(.callout)
                             .fontWeight(.semibold)
                     }
                     .foregroundColor(viewModel.playButtonItem == nil ? Color(UIColor.secondaryLabel) : accentColor.overlayColor)
                 }
             }
+            .disabled(viewModel.playButtonItem == nil)
 //            .contextMenu {
 //                if viewModel.playButtonItem != nil, viewModel.item.userData?.playbackPositionTicks ?? 0 > 0 {
 //                    Button {

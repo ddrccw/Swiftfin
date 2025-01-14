@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Combine
@@ -23,7 +23,6 @@ typealias SwipeGestureHandler = (UnitPoint, Bool, Int) -> Void
 typealias TapGestureHandler = (UnitPoint, Int) -> Void
 // state, point
 typealias LongPressGestureHandler = (UIGestureRecognizer.State, UnitPoint) -> Void
-
 
 struct GestureView: UIViewRepresentable {
 
@@ -180,7 +179,7 @@ class UIGestureView: UIView {
         tapGesture.numberOfTapsRequired = 1
         tapGesture.numberOfTouchesRequired = 1
         let doubleTapGesture = UITapGestureRecognizer(target: self, action: #selector(didPerformTap))
-        doubleTapGesture.numberOfTapsRequired = 2;
+        doubleTapGesture.numberOfTapsRequired = 2
         doubleTapGesture.numberOfTouchesRequired = 1
         let doubleTouchGesture = UITapGestureRecognizer(target: self, action: #selector(didPerformDoubleTouch))
         doubleTouchGesture.numberOfTapsRequired = 1
@@ -188,7 +187,7 @@ class UIGestureView: UIView {
 
         tapGesture.require(toFail: doubleTapGesture)
         doubleTouchGesture.require(toFail: doubleTapGesture)
-        
+
         let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(didPerformLongPress))
         longPressGesture.minimumPressDuration = longPressMinimumDuration
         let verticalPanGesture = PanDirectionGestureRecognizer(

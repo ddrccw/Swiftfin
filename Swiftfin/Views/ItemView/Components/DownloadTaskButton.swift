@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Factory
@@ -30,8 +30,9 @@ struct DownloadTaskButton: View {
             case .complete:
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundColor(.green)
-            case let .downloading(progress):
-                CircularProgressView(progress: progress)
+            case .downloading:
+                EmptyView()
+//                CircularProgressView(progress: progress)
             case .error:
                 Image(systemName: "exclamationmark.circle.fill")
                     .foregroundColor(.red)
@@ -45,7 +46,7 @@ struct DownloadTaskButton: View {
 extension DownloadTaskButton {
 
     init(item: BaseItemDto) {
-        let downloadManager = Container.downloadManager.callAsFunction()
+        let downloadManager = Container.shared.downloadManager()
 
         self.downloadTask = downloadManager.task(for: item) ?? .init(item: item)
         self.onSelect = { _ in }

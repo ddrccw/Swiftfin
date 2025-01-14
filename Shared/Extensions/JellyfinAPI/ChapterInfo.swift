@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Foundation
@@ -31,7 +31,11 @@ extension ChapterInfo {
 
 extension ChapterInfo {
 
-    struct FullInfo: Poster, Hashable {
+    struct FullInfo: Poster, Equatable {
+
+        var id: Int {
+            chapterInfo.hashValue
+        }
 
         let chapterInfo: ChapterInfo
         let imageSource: ImageSource
@@ -41,6 +45,11 @@ extension ChapterInfo {
             chapterInfo.displayTitle
         }
 
+        var unwrappedIDHashOrZero: Int {
+            id
+        }
+
+        let systemImage: String = "film"
         var subtitle: String?
         var showTitle: Bool = true
 
@@ -54,11 +63,7 @@ extension ChapterInfo {
             self.secondsRange = secondsRange
         }
 
-        func portraitPosterImageSource(maxWidth: CGFloat) -> ImageSource {
-            .init()
-        }
-
-        func landscapePosterImageSources(maxWidth: CGFloat, single: Bool) -> [ImageSource] {
+        func landscapeImageSources(maxWidth: CGFloat?) -> [ImageSource] {
             [imageSource]
         }
     }

@@ -3,57 +3,54 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import BlurHashKit
-import JellyfinAPI
 import Nuke
 import NukeUI
 import SwiftUI
-import UIKit
 
-struct ImageSource: Hashable {
-
-    let url: URL?
-    let blurHash: String?
-
-    init(url: URL? = nil, blurHash: String? = nil) {
-        self.url = url
-        self.blurHash = blurHash
-    }
-}
-
+// TODO: currently SVGs are only supported for logos, which are only used in a few places.
+//       make it so when displaying an SVG there is a unified `image` caller modifier
+// TODO: `LazyImage` uses a transaction for view swapping, which will fade out old views
+//       and fade in new views, causing a black "flash" between the placeholder and final image.
+//       Since we use blur hashes, we actually just want the final image to fade in on top while
+//       the blur hash view is at full opacity.
+//       - refactor for option
+//       - take a look at `RotateContentView`
 struct ImageView: View {
 
     @State
     private var sources: [ImageSource]
 
-    private var image: (NukeUI.Image) -> any View
-    private var placeholder: (() -> any View)?
+    private var image: (Image) -> any View
+    private var pipeline: ImagePipeline
+    private var placeholder: ((ImageSource) -> any View)?
     private var failure: () -> any View
-    private var resizingMode: ImageResizingMode
 
     @ViewBuilder
     private func _placeholder(_ currentSource: ImageSource) -> some View {
         if let placeholder = placeholder {
-            placeholder()
+            placeholder(currentSource)
                 .eraseToAnyView()
-        } else if let blurHash = currentSource.blurHash {
-            BlurHashView(blurHash: blurHash, size: .Square(length: 16))
         } else {
-            DefaultPlaceholderView()
+            DefaultPlaceholderView(blurHash: currentSource.blurHash)
         }
     }
 
     var body: some View {
         if let currentSource = sources.first {
-            LazyImage(url: currentSource.url) { state in
+            LazyImage(url: currentSource.url, transaction: .init(animation: .linear)) { state in
                 if state.isLoading {
                     _placeholder(currentSource)
                 } else if let _image = state.image {
-                    image(_image.resizingMode(resizingMode))
-                        .eraseToAnyView()
+                    if let data = state.imageContainer?.data {
+                        FastSVGView(data: data)
+                    } else {
+                        image(_image.resizable())
+                            .eraseToAnyView()
+                    }
                 } else if state.error != nil {
                     failure()
                         .eraseToAnyView()
@@ -62,8 +59,8 @@ struct ImageView: View {
                         }
                 }
             }
-            .pipeline(ImagePipeline(configuration: .withDataCache))
-            .id(currentSource)
+            .pipeline(pipeline)
+            .onDisappear(.lowerPriority)
         } else {
             failure()
                 .eraseToAnyView()
@@ -72,65 +69,52 @@ struct ImageView: View {
 }
 
 extension ImageView {
+
     init(_ source: ImageSource) {
-        self.init(
-            sources: [source],
-            image: { $0 },
-            placeholder: nil,
-            failure: { DefaultFailureView() },
-            resizingMode: .aspectFill
-        )
+        self.init([source].compacted(using: \.url))
     }
 
     init(_ sources: [ImageSource]) {
         self.init(
-            sources: sources,
+            sources: sources.compacted(using: \.url),
             image: { $0 },
+            pipeline: .shared,
             placeholder: nil,
-            failure: { DefaultFailureView() },
-            resizingMode: .aspectFill
+            failure: { EmptyView() }
         )
     }
 
     init(_ source: URL?) {
-        self.init(
-            sources: [ImageSource(url: source, blurHash: nil)],
-            image: { $0 },
-            placeholder: nil,
-            failure: { DefaultFailureView() },
-            resizingMode: .aspectFill
-        )
+        self.init([ImageSource(url: source)])
     }
 
     init(_ sources: [URL?]) {
-        self.init(
-            sources: sources.map { ImageSource(url: $0, blurHash: nil) },
-            image: { $0 },
-            placeholder: nil,
-            failure: { DefaultFailureView() },
-            resizingMode: .aspectFill
-        )
+        let imageSources = sources
+            .compacted()
+            .map { ImageSource(url: $0) }
+
+        self.init(imageSources)
     }
 }
 
-// MARK: Extensions
+// MARK: Modifiers
 
 extension ImageView {
 
-    func image(@ViewBuilder _ content: @escaping (NukeUI.Image) -> any View) -> Self {
+    func image(@ViewBuilder _ content: @escaping (Image) -> any View) -> Self {
         copy(modifying: \.image, with: content)
     }
 
-    func placeholder(@ViewBuilder _ content: @escaping () -> any View) -> Self {
+    func pipeline(_ pipeline: ImagePipeline) -> Self {
+        copy(modifying: \.pipeline, with: pipeline)
+    }
+
+    func placeholder(@ViewBuilder _ content: @escaping (ImageSource) -> any View) -> Self {
         copy(modifying: \.placeholder, with: content)
     }
 
     func failure(@ViewBuilder _ content: @escaping () -> any View) -> Self {
         copy(modifying: \.failure, with: content)
-    }
-
-    func resizingMode(_ resizingMode: ImageResizingMode) -> Self {
-        copy(modifying: \.resizingMode, with: resizingMode)
     }
 }
 
@@ -142,14 +126,18 @@ extension ImageView {
 
         var body: some View {
             Color.secondarySystemFill
+                .opacity(0.75)
         }
     }
 
     struct DefaultPlaceholderView: View {
 
+        let blurHash: String?
+
         var body: some View {
-            Color.secondarySystemFill
-                .opacity(0.5)
+            if let blurHash {
+                BlurHashView(blurHash: blurHash, size: .Square(length: 8))
+            }
         }
     }
 }

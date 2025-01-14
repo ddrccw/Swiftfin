@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import AVKit
@@ -13,6 +13,9 @@ import JellyfinAPI
 import SwiftUI
 
 struct NativeVideoPlayer: View {
+
+    @Environment(\.scenePhase)
+    var scenePhase
 
     @EnvironmentObject
     private var router: VideoPlayerCoordinator.Router
@@ -34,8 +37,7 @@ struct NativeVideoPlayer: View {
             if let _ = videoPlayerManager.currentViewModel {
                 playerView
             } else {
-//                VideoPlayer.LoadingView()
-                Text("Loading")
+                VideoPlayer.LoadingView()
             }
         }
         .navigationBarHidden(true)
@@ -54,6 +56,8 @@ struct NativeVideoPlayerView: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UINativeVideoPlayerViewController, context: Context) {}
 }
 
+// TODO: Refactor such that this does not subclass AVPlayerViewController. Subclassing is not
+// supported according to the apple docs.
 class UINativeVideoPlayerViewController: AVPlayerViewController {
 
     let videoPlayerManager: VideoPlayerManager
@@ -67,7 +71,7 @@ class UINativeVideoPlayerViewController: AVPlayerViewController {
 
         super.init(nibName: nil, bundle: nil)
 
-        let newPlayer: AVPlayer = .init(url: manager.currentViewModel.hlsPlaybackURL)
+        let newPlayer: AVPlayer = .init(url: manager.currentViewModel.playbackURL)
 
         newPlayer.allowsExternalPlayback = true
         newPlayer.appliesMediaSelectionCriteriaAutomatically = false

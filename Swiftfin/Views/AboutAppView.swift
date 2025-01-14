@@ -3,15 +3,12 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import SwiftUI
 
 struct AboutAppView: View {
-
-    @EnvironmentObject
-    private var router: SettingsCoordinator.Router
 
     @ObservedObject
     var viewModel: SettingsViewModel
@@ -19,16 +16,14 @@ struct AboutAppView: View {
     var body: some View {
         List {
             Section {
-                VStack(alignment: .center) {
+                VStack(alignment: .center, spacing: 10) {
 
-                    Image(uiImage: viewModel.currentAppIcon.iconPreview)
+                    Image(.jellyfinBlobBlue)
                         .resizable()
-                        .frame(width: 150, height: 150)
-                        .cornerRadius(150 / 6.4)
-                        .shadow(radius: 5)
+                        .aspectRatio(1, contentMode: .fit)
+                        .frame(height: 150)
 
-                    // App name, not to be localized
-                    Text("Swiftfin")
+                    Text(verbatim: "Swiftfin")
                         .fontWeight(.semibold)
                         .font(.title2)
                 }
@@ -43,39 +38,34 @@ struct AboutAppView: View {
                     trailing: "\(UIApplication.appVersion ?? .emptyDash) (\(UIApplication.bundleVersion ?? .emptyDash))"
                 )
 
-                ChevronButton(title: L10n.sourceCode)
-                    .leadingView {
-                        Image("logo.github")
-                            .resizable()
-                            .frame(width: 20, height: 20)
-                            .foregroundColor(.primary)
-                    }
-                    .onSelect {
-                        UIApplication.shared.open(.swiftfinGithub)
-                    }
+                ChevronButton(
+                    L10n.sourceCode,
+                    image: Image(.logoGithub),
+                    external: true
+                )
+                .onSelect {
+                    UIApplication.shared.open(.swiftfinGithub)
+                }
 
-                ChevronButton(title: L10n.bugsAndFeatures)
-                    .leadingView {
-                        Image(systemName: "plus.circle.fill")
-                            .resizable()
-                            .frame(width: 20, height: 20)
-                            .foregroundColor(.primary)
-                    }
-                    .onSelect {
-                        UIApplication.shared.open(.swiftfinGithubIssues)
-                    }
+                ChevronButton(
+                    L10n.bugsAndFeatures,
+                    systemName: "plus.circle.fill",
+                    external: true
+                )
+                .onSelect {
+                    UIApplication.shared.open(.swiftfinGithubIssues)
+                }
+                .symbolRenderingMode(.monochrome)
 
-                ChevronButton(title: L10n.settings)
-                    .leadingView {
-                        Image(systemName: "gearshape.fill")
-                            .resizable()
-                            .frame(width: 20, height: 20)
-                            .foregroundColor(.primary)
-                    }
-                    .onSelect {
-                        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-                        UIApplication.shared.open(url)
-                    }
+                ChevronButton(
+                    L10n.settings,
+                    systemName: "gearshape.fill",
+                    external: true
+                )
+                .onSelect {
+                    guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                    UIApplication.shared.open(url)
+                }
             }
         }
     }

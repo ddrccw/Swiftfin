@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Factory
@@ -12,34 +12,53 @@ import Nuke
 import Stinsen
 import SwiftUI
 
+// TODO: clean up like iOS
+//       - move some things to App
+// TODO: server check flow
+
 final class MainCoordinator: NavigationCoordinatable {
 
-    @Injected(LogManager.service)
+    @Injected(\.logService)
     private var logger
 
     var stack: Stinsen.NavigationStack<MainCoordinator>
 
     @Root
+    var loading = makeLoading
+    @Root
     var mainTab = makeMainTab
     @Root
-    var serverList = makeServerList
-    @Root
-    var liveTV = makeLiveTV
-//    @Route(.fullScreen)
-//    var videoPlayer = makeVideoPlayer
+    var selectUser = makeSelectUser
 
     init() {
 
-        if Container.userSession.callAsFunction().authenticated {
-            stack = NavigationStack(initial: \MainCoordinator.mainTab)
-        } else {
-            stack = NavigationStack(initial: \MainCoordinator.serverList)
+        stack = NavigationStack(initial: \.loading)
+
+        Task {
+            do {
+                try await SwiftfinStore.setupDataStack()
+
+                if Container.shared.currentUserSession() != nil {
+                    await MainActor.run {
+                        withAnimation(.linear(duration: 0.1)) {
+                            let _ = root(\.mainTab)
+                        }
+                    }
+                } else {
+                    await MainActor.run {
+                        withAnimation(.linear(duration: 0.1)) {
+                            let _ = root(\.selectUser)
+                        }
+                    }
+                }
+
+            } catch {
+                await MainActor.run {
+                    logger.critical("\(error.localizedDescription)")
+                    Notifications[.didFailMigration].post()
+                }
+            }
         }
-
-        ImageCache.shared.costLimit = 125 * 1024 * 1024 // 125MB memory
-        DataLoader.sharedUrlCache.diskCapacity = 1000 * 1024 * 1024 // 1000MB disk
-
-        UINavigationBar.appearance().titleTextAttributes = [.foregroundColor: UIColor.label]
 
         // Notification setup for state
         Notifications[.didSignIn].subscribe(self, selector: #selector(didSignIn))
@@ -48,29 +67,33 @@ final class MainCoordinator: NavigationCoordinatable {
 
     @objc
     func didSignIn() {
-        logger.info("Received `didSignIn` from NSNotificationCenter.")
-        root(\.mainTab)
+        logger.info("Signed in")
+
+        withAnimation(.linear(duration: 0.1)) {
+            let _ = root(\.mainTab)
+        }
     }
 
     @objc
     func didSignOut() {
-        logger.info("Received `didSignOut` from NSNotificationCenter.")
-        root(\.serverList)
+        logger.info("Signed out")
+
+        withAnimation(.linear(duration: 0.1)) {
+            let _ = root(\.selectUser)
+        }
+    }
+
+    func makeLoading() -> NavigationViewCoordinator<BasicNavigationViewCoordinator> {
+        NavigationViewCoordinator {
+            AppLoadingView()
+        }
     }
 
     func makeMainTab() -> MainTabCoordinator {
         MainTabCoordinator()
     }
 
-    func makeServerList() -> NavigationViewCoordinator<ServerListCoordinator> {
-        NavigationViewCoordinator(ServerListCoordinator())
+    func makeSelectUser() -> NavigationViewCoordinator<SelectUserCoordinator> {
+        NavigationViewCoordinator(SelectUserCoordinator())
     }
-
-    func makeLiveTV() -> LiveTVTabCoordinator {
-        LiveTVTabCoordinator()
-    }
-
-//    func makeVideoPlayer(parameters: VideoPlayerCoordinator.Parameters) -> NavigationViewCoordinator<VideoPlayerCoordinator> {
-//        NavigationViewCoordinator(VideoPlayerCoordinator(parameters: parameters))
-//    }
 }

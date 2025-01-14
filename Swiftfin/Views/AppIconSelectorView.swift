@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import Defaults
@@ -15,7 +15,6 @@ struct AppIconSelectorView: View {
     var viewModel: SettingsViewModel
 
     var body: some View {
-
         Form {
 
             Section {
@@ -70,7 +69,7 @@ extension AppIconSelectorView {
             } label: {
                 HStack {
 
-                    Image(uiImage: icon.iconPreview)
+                    Image(icon.iconName)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 60, height: 60)
@@ -85,9 +84,12 @@ extension AppIconSelectorView {
                     if icon.iconName == viewModel.currentAppIcon.iconName {
                         Image(systemName: "checkmark.circle.fill")
                             .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 20, height: 20)
-                            .accentSymbolRendering()
+                            .backport
+                            .fontWeight(.bold)
+                            .aspectRatio(1, contentMode: .fit)
+                            .frame(width: 24, height: 24)
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(accentColor.overlayColor, accentColor)
                     }
                 }
             }

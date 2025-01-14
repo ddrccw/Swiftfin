@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import CoreStore
@@ -13,33 +13,47 @@ import Logging
 import Pulse
 
 // TODO: cleanup
+extension Container {
+    var logService: Factory<Logger> { self { Logger(label: "org.jellyfin.swiftfin") }.singleton }
 
-class LogManager {
-
-    static let service = Factory<Logger>(scope: .singleton) {
-        .init(label: "Swiftfin")
-    }
-
-    static let pulseNetworkLogger = Factory<NetworkLogger>(scope: .singleton) {
-        var configuration = NetworkLogger.Configuration()
-        configuration.willHandleEvent = { event -> LoggerStore.Event? in
-            switch event {
-            case let .networkTaskCreated(networkTask):
-                if networkTask.originalRequest.url?.absoluteString.range(of: "/Images") != nil {
-                    return nil
-                }
-            case let .networkTaskCompleted(networkTask):
-                if networkTask.originalRequest.url?.absoluteString.range(of: "/Images") != nil {
-                    return nil
-                }
-            default: ()
-            }
-
-            return event
+    var pulseNetworkLogger: Factory<NetworkLogger> {
+        self {
+            let configuration = NetworkLogger.Configuration()
+            return NetworkLogger(configuration: configuration)
         }
-
-        return NetworkLogger(configuration: configuration)
+        .singleton
     }
+}
+
+struct LogManager {
+    // TODO: make rules for logging sessions and redacting
+
+//    static let pulseNetworkLogger = Factory<NetworkLogger>(scope: .singleton) {
+//        var configuration = NetworkLogger.Configuration()
+
+    // TODO: this used to be necessary to stop the mass of image requests
+    //       clogging the logs, however don't seem necessary anymore?
+    //       Find out how to get images to be logged and have an option to
+    //       turn it on, via SuperUser.
+
+//        configuration.willHandleEvent = { event -> LoggerStore.Event? in
+//            switch event {
+//            case let .networkTaskCreated(networkTask):
+//                if networkTask.originalRequest.url?.absoluteString.range(of: "/Images") != nil {
+//                    return nil
+//                }
+//            case let .networkTaskCompleted(networkTask):
+//                if networkTask.originalRequest.url?.absoluteString.range(of: "/Images") != nil {
+//                    return nil
+//                }
+//            default: ()
+//            }
+//
+//            return event
+//        }
+
+//        return NetworkLogger(configuration: configuration)
+//    }
 }
 
 struct SwiftfinConsoleLogger: LogHandler {
@@ -71,7 +85,7 @@ struct SwiftfinConsoleLogger: LogHandler {
 
 struct SwiftfinCorestoreLogger: CoreStoreLogger {
 
-    @Injected(LogManager.service)
+    @Injected(\.logService)
     private var logger
 
     func log(

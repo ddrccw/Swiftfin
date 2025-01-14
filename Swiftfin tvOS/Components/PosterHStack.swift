@@ -3,30 +3,33 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
+import CollectionHStack
+import OrderedCollections
 import SwiftUI
 
-struct PosterHStack<Item: Poster>: View {
+// TODO: trailing content refactor?
 
+struct PosterHStack<Element: Poster & Identifiable, Data: Collection>: View where Data.Element == Element, Data.Index == Int {
+
+    private var data: Data
     private var title: String?
-    private var type: PosterType
-    private var items: [Item]
-    private var itemScale: CGFloat
-    private var content: (Item) -> any View
-    private var imageOverlay: (Item) -> any View
-    private var contextMenu: (Item) -> any View
+    private var type: PosterDisplayType
+    private var content: (Element) -> any View
+    private var imageOverlay: (Element) -> any View
+    private var contextMenu: (Element) -> any View
     private var trailingContent: () -> any View
-    private var onSelect: (Item) -> Void
+    private var onSelect: (Element) -> Void
 
     // See PosterButton for implementation reason
-    private var focusedItem: Binding<Item?>?
+    private var focusedItem: Binding<Element?>?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 20) {
 
-            if let title = title {
+            if let title {
                 HStack {
                     Text(title)
                         .font(.title2)
@@ -38,27 +41,26 @@ struct PosterHStack<Item: Poster>: View {
                 }
             }
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 30) {
-                    ForEach(items, id: \.hashValue) { item in
-                        PosterButton(item: item, type: type)
-                            .scaleItem(itemScale)
-                            .content { content(item).eraseToAnyView() }
-                            .imageOverlay { imageOverlay(item).eraseToAnyView() }
-                            .contextMenu { contextMenu(item).eraseToAnyView() }
-                            .onSelect { onSelect(item) }
-                            .if(focusedItem != nil) { view in
-                                view.onFocusChanged { isFocused in
-                                    if isFocused { focusedItem?.wrappedValue = item }
-                                }
-                            }
+            CollectionHStack(
+                uniqueElements: data,
+                columns: type == .landscape ? 4 : 7
+            ) { item in
+                PosterButton(item: item, type: type)
+                    .content { content(item).eraseToAnyView() }
+                    .imageOverlay { imageOverlay(item).eraseToAnyView() }
+                    .contextMenu { contextMenu(item).eraseToAnyView() }
+                    .onSelect { onSelect(item) }
+                    .ifLet(focusedItem) { view, focusedItem in
+                        view.onFocusChanged { isFocused in
+                            if isFocused { focusedItem.wrappedValue = item }
+                        }
                     }
-
-                    trailingContent()
-                        .eraseToAnyView()
-                }
-                .padding(50)
             }
+            .clipsToBounds(false)
+            .dataPrefix(20)
+            .insets(horizontal: EdgeInsets.edgePadding, vertical: 20)
+            .itemSpacing(EdgeInsets.edgePadding - 20)
+            .scrollBehavior(.continuousLeadingEdge)
         }
         .focusSection()
         .mask {
@@ -83,39 +85,30 @@ extension PosterHStack {
 
     init(
         title: String? = nil,
-        type: PosterType,
-        items: [Item]
+        type: PosterDisplayType,
+        items: Data
     ) {
         self.init(
+            data: items,
             title: title,
             type: type,
-            items: items,
-            itemScale: 1,
-            content: { PosterButton.DefaultContentView(item: $0) },
+            content: { PosterButton.TitleSubtitleContentView(item: $0) },
             imageOverlay: { PosterButton.DefaultOverlay(item: $0) },
             contextMenu: { _ in EmptyView() },
             trailingContent: { EmptyView() },
-            onSelect: { _ in },
-            focusedItem: nil
+            onSelect: { _ in }
         )
     }
-}
 
-extension PosterHStack {
-
-    func scaleItems(_ scale: CGFloat) -> Self {
-        copy(modifying: \.itemScale, with: scale)
-    }
-
-    func content(@ViewBuilder _ content: @escaping (Item) -> any View) -> Self {
+    func content(@ViewBuilder _ content: @escaping (Element) -> any View) -> Self {
         copy(modifying: \.content, with: content)
     }
 
-    func imageOverlay(@ViewBuilder _ content: @escaping (Item) -> any View) -> Self {
+    func imageOverlay(@ViewBuilder _ content: @escaping (Element) -> any View) -> Self {
         copy(modifying: \.imageOverlay, with: content)
     }
 
-    func contextMenu(@ViewBuilder _ content: @escaping (Item) -> any View) -> Self {
+    func contextMenu(@ViewBuilder _ content: @escaping (Element) -> any View) -> Self {
         copy(modifying: \.contextMenu, with: content)
     }
 
@@ -123,11 +116,11 @@ extension PosterHStack {
         copy(modifying: \.trailingContent, with: content)
     }
 
-    func onSelect(_ action: @escaping (Item) -> Void) -> Self {
+    func onSelect(_ action: @escaping (Element) -> Void) -> Self {
         copy(modifying: \.onSelect, with: action)
     }
 
-    func focusedItem(_ binding: Binding<Item?>) -> Self {
+    func focusedItem(_ binding: Binding<Element?>) -> Self {
         copy(modifying: \.focusedItem, with: binding)
     }
 }

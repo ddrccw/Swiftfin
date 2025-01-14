@@ -3,7 +3,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, you can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2023 Jellyfin & Jellyfin Contributors
+// Copyright (c) 2025 Jellyfin & Jellyfin Contributors
 //
 
 import SwiftUI
@@ -14,20 +14,17 @@ extension VideoPlayer {
 
         enum MenuSection: String, Displayable {
             case audio
-            case chapters
             case playbackSpeed
             case subtitles
 
             var displayTitle: String {
                 switch self {
                 case .audio:
-                    return "Audio"
-                case .chapters:
-                    return "Chapters"
+                    return L10n.audio
                 case .playbackSpeed:
-                    return "Playback Speed"
+                    return L10n.playbackSpeed
                 case .subtitles:
-                    return "Subtitles"
+                    return L10n.subtitles
                 }
             }
         }
@@ -41,7 +38,7 @@ extension VideoPlayer {
         private var focusedSection: MenuSection?
 
         @State
-        private var lastFocusedSection: MenuSection?
+        private var lastFocusedSection: MenuSection = .subtitles
 
         @StateObject
         private var focusGuide: FocusGuide = .init()
@@ -50,24 +47,54 @@ extension VideoPlayer {
         private var subtitleMenu: some View {
             HStack {
                 ForEach(viewModel.subtitleStreams, id: \.self) { mediaStream in
-                    Button {} label: {
-                        if videoPlayerManager.subtitleTrackIndex == mediaStream.index {
-                            Label(mediaStream.displayTitle ?? L10n.noTitle, systemImage: "checkmark")
-                        } else {
-                            Text(mediaStream.displayTitle ?? L10n.noTitle)
-                        }
+                    Button {
+                        videoPlayerManager.subtitleTrackIndex = mediaStream.index ?? -1
+                        videoPlayerManager.proxy.setSubtitleTrack(.absolute(mediaStream.index ?? -1))
+                    } label: {
+                        Label(
+                            mediaStream.displayTitle ?? L10n.noTitle,
+                            systemImage: videoPlayerManager.subtitleTrackIndex == mediaStream.index ? "checkmark.circle.fill" : "circle"
+                        )
                     }
                 }
             }
-            .frame(height: 80)
-            .padding(.horizontal, 50)
-            .padding(.top)
-            .padding(.bottom, 45)
-            .focusGuide(
-                focusGuide,
-                tag: "contents",
-                top: "sections"
-            )
+            .modifier(MenuStyle(focusGuide: focusGuide))
+        }
+
+        @ViewBuilder
+        private var audioMenu: some View {
+            HStack {
+                ForEach(viewModel.audioStreams, id: \.self) { mediaStream in
+                    Button {
+                        videoPlayerManager.audioTrackIndex = mediaStream.index ?? -1
+                        videoPlayerManager.proxy.setAudioTrack(.absolute(mediaStream.index ?? -1))
+                    } label: {
+                        Label(
+                            mediaStream.displayTitle ?? L10n.noTitle,
+                            systemImage: videoPlayerManager.audioTrackIndex == mediaStream.index ? "checkmark.circle.fill" : "circle"
+                        )
+                    }
+                }
+            }
+            .modifier(MenuStyle(focusGuide: focusGuide))
+        }
+
+        @ViewBuilder
+        private var playbackSpeedMenu: some View {
+            HStack {
+                ForEach(PlaybackSpeed.allCases, id: \.self) { speed in
+                    Button {
+                        videoPlayerManager.playbackSpeed = speed
+                        videoPlayerManager.proxy.setRate(.absolute(Float(speed.rawValue)))
+                    } label: {
+                        Label(
+                            speed.displayTitle,
+                            systemImage: speed == videoPlayerManager.playbackSpeed ? "checkmark.circle.fill" : "circle"
+                        )
+                    }
+                }
+            }
+            .modifier(MenuStyle(focusGuide: focusGuide))
         }
 
         var body: some View {
@@ -77,7 +104,7 @@ extension VideoPlayer {
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack {
-                        if !viewModel.subtitleStreams.isEmpty {
+                        if viewModel.subtitleStreams.isNotEmpty {
                             SectionButton(
                                 section: .subtitles,
                                 focused: $focusedSection,
@@ -85,7 +112,7 @@ extension VideoPlayer {
                             )
                         }
 
-                        if !viewModel.audioStreams.isEmpty {
+                        if viewModel.audioStreams.isNotEmpty {
                             SectionButton(
                                 section: .audio,
                                 focused: $focusedSection,
@@ -98,14 +125,6 @@ extension VideoPlayer {
                             focused: $focusedSection,
                             lastFocused: $lastFocusedSection
                         )
-
-                        if !viewModel.chapters.isEmpty {
-                            SectionButton(
-                                section: .chapters,
-                                focused: $focusedSection,
-                                lastFocused: $lastFocusedSection
-                            )
-                        }
                     }
                     .focusGuide(
                         focusGuide,
@@ -123,10 +142,10 @@ extension VideoPlayer {
                     switch lastFocusedSection {
                     case .subtitles:
                         subtitleMenu
-                    default:
-                        Button {
-                            Text("None")
-                        }
+                    case .audio:
+                        audioMenu
+                    case .playbackSpeed:
+                        playbackSpeedMenu
                     }
                 }
             }
@@ -141,7 +160,7 @@ extension VideoPlayer {
                     endPoint: .bottom
                 )
             }
-            .onChange(of: focusedSection) { newValue in
+            .onChange(of: focusedSection) { _, newValue in
                 guard let newValue else { return }
                 lastFocusedSection = newValue
             }
@@ -151,7 +170,7 @@ extension VideoPlayer {
 
             let section: MenuSection
             let focused: FocusState<MenuSection?>.Binding
-            let lastFocused: Binding<MenuSection?>
+            let lastFocused: Binding<MenuSection>
 
             var body: some View {
                 Button {
@@ -168,6 +187,23 @@ extension VideoPlayer {
                 .buttonStyle(.plain)
                 .background(.clear)
                 .focused(focused, equals: section)
+            }
+        }
+
+        struct MenuStyle: ViewModifier {
+            var focusGuide: FocusGuide
+
+            func body(content: Content) -> some View {
+                content
+                    .focusGuide(
+                        focusGuide,
+                        tag: "contents",
+                        top: "sections"
+                    )
+                    .frame(height: 80)
+                    .padding(.horizontal, 50)
+                    .padding(.top)
+                    .padding(.bottom, 45)
             }
         }
     }
