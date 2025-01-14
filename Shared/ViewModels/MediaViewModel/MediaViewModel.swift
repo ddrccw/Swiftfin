@@ -97,7 +97,7 @@ final class MediaViewModel: ViewModel, Stateful {
         // folders has `type = UserView`, but we manually
         // force it to `folders` for better view handling
         let supportedUserViews = try await (userViews.value.items ?? [])
-            .intersection(Self.supportedCollectionTypes, using: \.collectionType)
+//            .intersection(Self.supportedCollectionTypes, using: \.collectionType)
             .subtracting(excludedLibraryIDs, using: \.id)
             .map { item in
 
