@@ -290,8 +290,19 @@ extension LiveVideoPlayer {
             guard !isPresentingOverlay else { return }
             isGestureLocked.toggle()
         case .playbackSpeed:
-            let i = 0
-            // TODO(xiaomin.cc): implement
+            var clampedPlaybackSpeed: Double = 0.0
+            if state == .began {
+                clampedPlaybackSpeed = 1.5
+            } else if state == .cancelled || state == .ended {
+                clampedPlaybackSpeed = 1.0
+            }
+
+            if clampedPlaybackSpeed > 0 {
+                updateViewProxy.present(systemName: "speedometer", title: clampedPlaybackSpeed.rateLabel)
+
+                playbackSpeed = clampedPlaybackSpeed
+                videoPlayerManager.proxy.setRate(.absolute(Float(clampedPlaybackSpeed)))
+            }
         }
     }
 
@@ -324,8 +335,13 @@ extension LiveVideoPlayer {
             case .jump:
                 jumpAction(unitPoint: unitPoint, amount: taps - 1)
             case .pausePlay:
-                let i = 0
-                // TODO(xiaomin.cc): implement
+                if videoPlayerManager.state == .playing {
+                    videoPlayerManager.proxy.pause()
+                    updateViewProxy.present(systemName: "pause.fill", title: "Pause")
+                } else {
+                    videoPlayerManager.proxy.play()
+                    updateViewProxy.present(systemName: "play.fill", title: "Play")
+                }
             }
         } else {
             withAnimation(.linear(duration: 0.1)) {
