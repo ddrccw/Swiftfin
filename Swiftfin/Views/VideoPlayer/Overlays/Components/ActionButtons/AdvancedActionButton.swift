@@ -21,12 +21,17 @@ extension VideoPlayer.Overlay.ActionButtons {
         @EnvironmentObject
         private var splitViewProxy: SplitContentViewProxy
 
+        @Environment(\.currentOverlayType)
+        @Binding
+        private var currentOverlayType
+
         private var content: () -> any View
 
         var body: some View {
             Button {
                 overlayTimer.start(5)
-                splitViewProxy.present()
+                currentOverlayType = .settings
+                // splitViewProxy.present()
             } label: {
                 content().eraseToAnyView()
             }

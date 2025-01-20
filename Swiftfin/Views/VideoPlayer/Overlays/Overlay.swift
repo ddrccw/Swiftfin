@@ -27,6 +27,9 @@ extension VideoPlayer {
 
                 ChapterOverlay()
                     .visible(currentOverlayType == .chapters)
+
+                SettingsOverlay()
+                    .visible(currentOverlayType == .settings)
             }
             .animation(.linear(duration: 0.1), value: currentOverlayType)
             .environment(\.currentOverlayType, $currentOverlayType)

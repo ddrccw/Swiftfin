@@ -22,6 +22,7 @@ struct VideoPlayer: View {
     enum OverlayType {
         case main
         case chapters
+        case settings
     }
 
     @Environment(\.scenePhase)
@@ -215,6 +216,8 @@ struct VideoPlayer: View {
             .environment(\.isPresentingOverlay, $isPresentingOverlay)
             .environment(\.isScrubbing, $isScrubbing)
             .environment(\.playbackSpeed, $playbackSpeed)
+            .environment(\.audioOffset, $audioOffset)
+            .environment(\.subtitleOffset, $subtitleOffset)
     }
 
     var body: some View {

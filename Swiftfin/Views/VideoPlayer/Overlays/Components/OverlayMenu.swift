@@ -24,15 +24,23 @@ extension VideoPlayer.Overlay {
 
         @ViewBuilder
         private var advancedButton: some View {
-            Button {
-                splitContentViewProxy.present()
-            } label: {
+            ActionButtons.Advanced {
                 HStack {
                     Image(systemName: "gearshape.fill")
 
                     Text(L10n.advanced)
                 }
             }
+
+//            Button {
+//                // splitContentViewProxy.present()
+//            } label: {
+//                HStack {
+//                    Image(systemName: "gearshape.fill")
+//
+//                    Text(L10n.advanced)
+//                }
+//            }
         }
 
         @ViewBuilder
