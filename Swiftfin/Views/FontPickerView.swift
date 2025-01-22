@@ -12,35 +12,25 @@ import UIKit
 struct FontPickerView: View {
 
     @Binding
-    // <<<<<<< HEAD
-//    private var selection: String
-//
-//    @State
-//    private var updateSelection: String
-//
-//    private let fonts: [String]
-//
-//    init(selection: Binding<String>) {
-//        self._selection = selection
-//        self.updateSelection = selection.wrappedValue
-//        let customFont = "Microsoft YaHei"
-//        var fonts = UIFont.familyNames.filter { $0 != customFont }
-//        fonts.insert(customFont, at: 0)
-//        self.fonts = fonts
-//    }
-//
-//    var body: some View {
-//        SelectorView(
-//            selection: $updateSelection,
-//            allItems: self.fonts
-    //=======
-    var selection: String
+    private var selection: String
+
+    private let fonts: [String]
+
+    init(selection: Binding<String>) {
+        self._selection = selection
+        let customFont = "Microsoft YaHei"
+        var fonts = UIFont.familyNames
+        if fonts.contains(customFont) {
+            fonts = fonts.filter { $0 != customFont }
+            fonts.insert(customFont, at: 0)
+        }
+        self.fonts = fonts
+    }
 
     var body: some View {
         SelectorView(
             selection: $selection,
-            sources: UIFont.familyNames
-            // >>>>>>> upstream/main
+            sources: fonts
         )
         .label { fontFamily in
             Text(fontFamily)
