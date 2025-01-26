@@ -103,11 +103,24 @@ class VideoPlayerViewModel: ViewModel {
         self.playSessionID = playSessionID
         self.playbackURL = playbackURL
         self.videoStreams = videoStreams
-        self.audioStreams = audioStreams
-            .adjustAudioForExternalSubtitles(externalMediaStreamCount: subtitleStreams.filter { $0.isExternal ?? false }.count)
+        if streamType == .transcode {
+            // only has one extra valid audio stream
+            // its index != selectedAudioStreamIndex
+            let audioStreamIndex = videoStreams.count + audioStreams.count + subtitleStreams.count
+            self.audioStreams = audioStreams.filter { $0.index == selectedAudioStreamIndex }
+                .map {
+                    var copy = $0
+                    copy.index = audioStreamIndex
+                    return copy
+                }
+            self.selectedAudioStreamIndex = audioStreamIndex
+        } else {
+            self.audioStreams = audioStreams
+                .adjustAudioForExternalSubtitles(externalMediaStreamCount: subtitleStreams.filter { $0.isExternal ?? false }.count)
+            self.selectedAudioStreamIndex = selectedAudioStreamIndex
+        }
         self.subtitleStreams = subtitleStreams
             .adjustExternalSubtitleIndexes(audioStreamCount: audioStreams.count)
-        self.selectedAudioStreamIndex = selectedAudioStreamIndex
         self.selectedSubtitleStreamIndex = selectedSubtitleStreamIndex
         self.chapters = chapters
         self.streamType = streamType
